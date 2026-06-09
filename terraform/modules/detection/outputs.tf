@@ -12,3 +12,13 @@ output "guardduty_detector_id" {
   description = "GuardDuty detector ID, for tuning and the findings export wired at T9."
   value       = aws_guardduty_detector.this.id
 }
+
+output "cloudtrail_sqs_queue_arn" {
+  description = "CloudTrail notification queue ARN; consumed by iam/ for Filebeat read perms"
+  value       = aws_sqs_queue.cloudtrail_notifications.arn
+}
+
+output "cloudtrail_sqs_queue_url" {
+  description = "CloudTrail notification queue URL for Filebeat aws-s3 input"
+  value       = aws_sqs_queue.cloudtrail_notifications.id
+}

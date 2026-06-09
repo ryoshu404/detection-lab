@@ -69,3 +69,49 @@ resource "aws_guardduty_detector_feature" "s3" {
   name        = "S3_DATA_EVENTS"
   status      = "ENABLED"
 }
+
+data "aws_caller_identity" "current" {}
+
+resource "aws_sqs_queue" "cloudtrail_notifications" {
+  name                       = "cloudtrail-notifications-${var.environment}"
+  message_retention_seconds  = 345600
+  visibility_timeout_seconds = 300
+  sqs_managed_sse_enabled    = true
+}
+
+data "aws_iam_policy_document" "cloudtrail_sqs" {
+  statement {
+    effect    = "Allow"
+    actions   = ["sqs:SendMessage"]
+    resources = [aws_sqs_queue.cloudtrail_notifications.arn]
+    principals {
+      type        = "Service"
+      identifiers = ["s3.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values   = [var.cloudtrail_bucket_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_sqs_queue_policy" "cloudtrail_notifications" {
+  queue_url = aws_sqs_queue.cloudtrail_notifications.id
+  policy    = data.aws_iam_policy_document.cloudtrail_sqs.json
+}
+
+resource "aws_s3_bucket_notification" "cloudtrail" {
+  bucket = var.cloudtrail_bucket_name
+  queue {
+    queue_arn     = aws_sqs_queue.cloudtrail_notifications.arn
+    events        = ["s3:ObjectCreated:*"]
+    filter_prefix = "AWSLogs/"
+  }
+  depends_on = [aws_sqs_queue_policy.cloudtrail_notifications]
+}

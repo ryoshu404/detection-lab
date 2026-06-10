@@ -190,3 +190,81 @@ resource "aws_s3_bucket_policy" "flowlogs" {
   bucket = aws_s3_bucket.this["flowlogs"].id
   policy = data.aws_iam_policy_document.flowlogs.json
 }
+
+resource "aws_kms_key" "guardduty" {
+  description             = "GuardDuty findings export encryption"
+  deletion_window_in_days = 7
+  enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.guardduty_kms.json
+}
+
+resource "aws_kms_alias" "guardduty" {
+  name          = "alias/guardduty-findings-${var.environment}"
+  target_key_id = aws_kms_key.guardduty.key_id
+}
+
+data "aws_iam_policy_document" "guardduty_kms" {
+  statement {
+    sid       = "AccountAdmin"
+    effect    = "Allow"
+    actions   = ["kms:*"]
+    resources = ["*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+  statement {
+    sid       = "AllowGuardDutyEncrypt"
+    effect    = "Allow"
+    actions   = ["kms:GenerateDataKey"]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["guardduty.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+data "aws_iam_policy_document" "guardduty_bucket" {
+  statement {
+    sid       = "AllowGuardDutyGetBucketLocation"
+    effect    = "Allow"
+    actions   = ["s3:GetBucketLocation"]
+    resources = [aws_s3_bucket.this["guardduty"].arn]
+    principals {
+      type        = "Service"
+      identifiers = ["guardduty.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+  statement {
+    sid       = "AllowGuardDutyPutObject"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.this["guardduty"].arn}/*"]
+    principals {
+      type        = "Service"
+      identifiers = ["guardduty.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "guardduty" {
+  bucket = aws_s3_bucket.this["guardduty"].id
+  policy = data.aws_iam_policy_document.guardduty_bucket.json
+}

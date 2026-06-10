@@ -34,3 +34,13 @@ variable "enable_s3_data_events" {
   type        = bool
   default     = true
 }
+
+variable "guardduty_bucket_arn" {
+  description = "GuardDuty findings bucket ARN (S3 export destination)"
+  type        = string
+}
+
+variable "guardduty_kms_key_arn" {
+  description = "KMS key ARN for GuardDuty findings export encryption"
+  type        = string
+}

@@ -22,3 +22,8 @@ output "archive_bucket_arn" {
   description = "General-purpose log archive bucket ARN."
   value       = aws_s3_bucket.this["archive"].arn
 }
+
+output "guardduty_kms_key_arn" {
+  description = "KMS key ARN for GuardDuty findings export"
+  value       = aws_kms_key.guardduty.arn
+}

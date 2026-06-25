@@ -115,3 +115,9 @@ resource "aws_s3_bucket_notification" "cloudtrail" {
   }
   depends_on = [aws_sqs_queue_policy.cloudtrail_notifications]
 }
+
+resource "aws_guardduty_publishing_destination" "s3" {
+  detector_id     = aws_guardduty_detector.this.id
+  destination_arn = var.guardduty_bucket_arn
+  kms_key_arn     = var.guardduty_kms_key_arn
+}

@@ -27,6 +27,8 @@ module "detection" {
   cloudtrail_bucket_name = module.storage.cloudtrail_bucket_name
   cloudtrail_bucket_arn  = module.storage.cloudtrail_bucket_arn
   flowlogs_bucket_arn    = module.storage.flowlogs_bucket_arn
+  guardduty_bucket_arn   = module.storage.guardduty_bucket_arn
+  guardduty_kms_key_arn  = module.storage.guardduty_kms_key_arn
 
   # CloudTrail and Flow Logs validate bucket write access at creation, so the
   # bucket policies (in storage/) must exist first.

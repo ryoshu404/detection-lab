@@ -1,0 +1,20 @@
+# Copy to terraform.tfvars and fill in. terraform.tfvars is gitignored.
+
+proxmox_endpoint  = "https://192.168.1.10:8006/" # your Proxmox box IP
+proxmox_api_token = "terraform@pve!tf=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_node      = "pve"
+
+# Your SSH public key (cat ~/.ssh/id_ed25519.pub)
+ssh_public_key = "ssh-ed25519 AAAA... you@host"
+
+# VM shape (defaults are fine; override to taste)
+vm_name      = "elastic"
+vm_cores     = 4
+vm_memory_mb = 8192
+vm_disk_gb   = 80
+
+# Networking: leave dhcp, or pin a static IP on the Hosts VLAN.
+# If static, also set vm_gateway and reserve/exclude it in UniFi.
+vm_ip      = "dhcp"
+# vm_ip      = "192.168.1.20/24"
+# vm_gateway = "192.168.1.1"

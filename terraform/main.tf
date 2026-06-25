@@ -1,6 +1,7 @@
 module "networking" {
   source      = "./modules/networking"
   environment = var.environment
+  enable_nat  = false
 }
 
 module "storage" {
@@ -33,14 +34,4 @@ module "detection" {
   # CloudTrail and Flow Logs validate bucket write access at creation, so the
   # bucket policies (in storage/) must exist first.
   depends_on = [module.storage]
-}
-
-module "siem" {
-  source                = "./modules/siem"
-  environment           = var.environment
-  vpc_id                = module.networking.vpc_id
-  vpc_cidr_block        = module.networking.vpc_cidr_block
-  private_subnet_id     = module.networking.private_subnet_ids[0]
-  instance_profile_name = module.iam.elastic_instance_profile_name
-  instance_type         = "t3.large"
 }

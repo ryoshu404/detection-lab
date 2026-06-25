@@ -56,3 +56,24 @@ resource "aws_iam_instance_profile" "elastic_instance" {
   name = "${var.environment}-elastic-instance"
   role = aws_iam_role.elastic_instance.name
 }
+
+# Local Filebeat (Proxmox VM) reads CloudTrail from S3/SQS using static keys
+# instead of an instance role, since it's off-AWS. Reuses the same scoped
+# s3_log_read + sqs_read policies the EC2 instance role used.
+resource "aws_iam_user" "filebeat_local" {
+  name = "filebeat-local-${var.environment}"
+}
+
+resource "aws_iam_user_policy_attachment" "filebeat_s3_log_read" {
+  user       = aws_iam_user.filebeat_local.name
+  policy_arn = aws_iam_policy.s3_log_read.arn
+}
+
+resource "aws_iam_user_policy_attachment" "filebeat_sqs_read" {
+  user       = aws_iam_user.filebeat_local.name
+  policy_arn = aws_iam_policy.sqs_read.arn
+}
+
+resource "aws_iam_access_key" "filebeat_local" {
+  user = aws_iam_user.filebeat_local.name
+}

@@ -9,7 +9,7 @@ The workflow follows the Detection-as-Code patterns described in Lussier's [Impl
 - **Foundation:** Terraform-managed AWS (IAM, VPC with private subnets, S3 log buckets)
 - **Telemetry:** CloudTrail (multi-region with log validation), GuardDuty, VPC Flow Logs, Sysmon, macOS Unified Log
 - **Attack emulation:** Stratus Red Team (cloud), Atomic Red Team (endpoints)
-- **SIEM:** Elastic on EC2 (single-node, accessed via SSM Session Manager)
+- **SIEM:** Elastic self-hosted on a local Proxmox VM (single-node), ingesting AWS telemetry via Filebeat (S3/SQS)
 - **Detection authoring:** Sigma source, compiled to target SIEM dialects at deploy time
 - **Response orchestration:** Splunk SOAR Community Edition
 - **Deployment:** GitHub Actions -> `pydetect deploy.py` -> Elastic, with bidirectional metadata sync

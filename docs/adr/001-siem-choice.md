@@ -5,7 +5,7 @@
 
 ## Status
 
-Accepted
+Accepted | Superseded in part by ADR-002 (SIEM hosting moved to local hardware)
 
 ## Context
 

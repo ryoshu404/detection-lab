@@ -10,11 +10,25 @@ ssh_public_key = "ssh-ed25519 AAAA... you@host"
 # VM shape (defaults are fine; override to taste)
 vm_name      = "elastic"
 vm_cores     = 4
-vm_memory_mb = 8192
+vm_memory_mb = 12288
 vm_disk_gb   = 80
 
 # Networking: leave dhcp, or pin a static IP on the Hosts VLAN.
 # If static, also set vm_gateway and reserve/exclude it in UniFi.
 vm_ip      = "dhcp"
-# vm_ip      = "192.168.1.20/24"
+# vm_ip      = "192.168.1.11/24"
 # vm_gateway = "192.168.1.1"
+
+# Fleet Server LXC
+# lxc_template_file_id is REQUIRED (no default). Get the exact ID from:
+#   pveam available --section system   (find the debian-12 line)
+#   pveam download local <that-filename>
+#   pveam list local                   (copy the resulting volume ID)
+lxc_template_file_id = "local:vztmpl/debian-12-standard_VERSION_amd64.tar.zst"
+
+# Fleet LXC shape (defaults are fine; override to taste)
+fleet_hostname  = "fleet"
+fleet_cores     = 2
+fleet_memory_mb = 2048
+fleet_disk_gb   = 8
+fleet_ip        = "192.168.1.12/24"

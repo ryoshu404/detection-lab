@@ -42,7 +42,7 @@ variable "vm_cores" {
 variable "vm_memory_mb" {
   description = "RAM in MB."
   type        = number
-  default     = 8192
+  default     = 12288
 }
 
 variable "vm_disk_gb" {
@@ -102,4 +102,45 @@ variable "proxmox_ssh_private_key_file" {
   description = "Path to the SSH private key for the Proxmox node."
   type        = string
   default     = "~/.ssh/id_ed25519"
+}
+
+variable "fleet_ctid" {
+  description = "Container ID for the Fleet Server LXC."
+  type        = number
+  default     = 102
+}
+
+variable "fleet_hostname" {
+  description = "Hostname for the Fleet Server LXC."
+  type        = string
+  default     = "fleet"
+}
+
+variable "fleet_ip" {
+  description = "Static IP/CIDR for the Fleet Server LXC on the Hosts VLAN."
+  type        = string
+  default     = "192.168.1.12/24"
+}
+
+variable "fleet_memory_mb" {
+  description = "RAM in MB for the Fleet Server LXC."
+  type        = number
+  default     = 2048
+}
+
+variable "fleet_cores" {
+  description = "CPU cores for the Fleet Server LXC."
+  type        = number
+  default     = 2
+}
+
+variable "fleet_disk_gb" {
+  description = "Root disk size in GB for the Fleet Server LXC."
+  type        = number
+  default     = 8
+}
+
+variable "lxc_template_file_id" {
+  description = "Proxmox LXC template volume ID, e.g. local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+  type        = string
 }

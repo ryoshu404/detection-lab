@@ -78,6 +78,54 @@ resource "proxmox_virtual_environment_vm" "elastic" {
   }
 
   lifecycle {
-    ignore_changes = [initialization[0].user_account]
+    ignore_changes = [
+      initialization[0].user_account,
+      initialization[0].user_data_file_id,
+    ]
+  }
+}
+
+resource "proxmox_virtual_environment_container" "fleet" {
+  node_name    = var.proxmox_node
+  vm_id        = var.fleet_ctid
+  unprivileged = true
+  tags         = ["lab", "fleet", "terraform"]
+
+  cpu {
+    cores = var.fleet_cores
+  }
+
+  memory {
+    dedicated = var.fleet_memory_mb
+  }
+
+  disk {
+    datastore_id = var.vm_datastore
+    size         = var.fleet_disk_gb
+  }
+
+  network_interface {
+    name   = "eth0"
+    bridge = var.vm_bridge
+  }
+
+  operating_system {
+    template_file_id = var.lxc_template_file_id
+    type             = "debian"
+  }
+
+  initialization {
+    hostname = var.fleet_hostname
+
+    ip_config {
+      ipv4 {
+        address = var.fleet_ip
+        gateway = var.vm_gateway
+      }
+    }
+
+    user_account {
+      keys = [trimspace(var.ssh_public_key)]
+    }
   }
 }

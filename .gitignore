@@ -55,3 +55,7 @@ desktop.ini
 
 # Logs
 *.log
+
+# SOAR poller secrets and runtime state
+soar/config.env
+soar/state.json

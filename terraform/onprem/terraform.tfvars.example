@@ -32,3 +32,10 @@ fleet_cores     = 2
 fleet_memory_mb = 2048
 fleet_disk_gb   = 8
 fleet_ip        = "192.168.1.12/24"
+
+# Linux endpoint shape (defaults are fine; override to taste)
+endpoint_hostname  = "linux-endpoint"
+endpoint_cores     = 2
+endpoint_memory_mb = 3072
+endpoint_disk_gb   = 20
+endpoint_ip        = "192.168.1.13/24"

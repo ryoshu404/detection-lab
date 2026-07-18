@@ -144,3 +144,39 @@ variable "lxc_template_file_id" {
   description = "Proxmox LXC template volume ID, e.g. local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
   type        = string
 }
+
+variable "endpoint_hostname" {
+  description = "Hostname for the Linux endpoint."
+  type        = string
+  default     = "linux-endpoint"
+}
+
+variable "endpoint_vmid" {
+  description = "VMID for the Linux endpoint."
+  type        = number
+  default     = 103
+}
+
+variable "endpoint_ip" {
+  description = "Static IP/CIDR for the Linux endpoint on the Hosts VLAN."
+  type        = string
+  default     = "192.168.1.13/24"
+}
+
+variable "endpoint_cores" {
+  description = "CPU cores for the Linux endpoint."
+  type        = number
+  default     = 2
+}
+
+variable "endpoint_memory_mb" {
+  description = "RAM in MB for the Linux endpoint."
+  type        = number
+  default     = 3072
+}
+
+variable "endpoint_disk_gb" {
+  description = "Disk size in GB for the Linux endpoint."
+  type        = number
+  default     = 20
+}

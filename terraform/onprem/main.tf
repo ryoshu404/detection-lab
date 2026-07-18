@@ -129,3 +129,74 @@ resource "proxmox_virtual_environment_container" "fleet" {
     }
   }
 }
+
+resource "proxmox_virtual_environment_file" "linux_endpoint_cloud_init" {
+  content_type = "snippets"
+  datastore_id = var.snippet_datastore
+  node_name    = var.proxmox_node
+  source_raw {
+    file_name = "linux-endpoint-cloud-init.yaml"
+    data      = <<-EOT
+      #cloud-config
+      hostname: ${var.endpoint_hostname}
+      users:
+        - name: ${var.vm_username}
+          groups: [sudo]
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          ssh_authorized_keys:
+            - ${var.ssh_public_key}
+      package_update: true
+      packages:
+        - qemu-guest-agent
+        - curl
+      runcmd:
+        - systemctl enable --now qemu-guest-agent
+      EOT
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "linux_endpoint" {
+  name      = var.endpoint_hostname
+  node_name = var.proxmox_node
+  vm_id     = var.endpoint_vmid
+  tags      = ["lab", "endpoint", "linux", "terraform"]
+
+  agent {
+    enabled = true
+  }
+  cpu {
+    cores = var.endpoint_cores
+    type  = "host"
+  }
+  memory {
+    dedicated = var.endpoint_memory_mb
+  }
+  disk {
+    datastore_id = var.vm_datastore
+    file_id      = var.vm_image_file_id
+    interface    = "virtio0"
+    size         = var.endpoint_disk_gb
+    iothread     = true
+    discard      = "on"
+  }
+  network_device {
+    bridge = var.vm_bridge
+  }
+  initialization {
+    datastore_id      = var.vm_datastore
+    user_data_file_id = proxmox_virtual_environment_file.linux_endpoint_cloud_init.id
+    ip_config {
+      ipv4 {
+        address = var.endpoint_ip
+        gateway = var.vm_gateway
+      }
+    }
+  }
+  lifecycle {
+    ignore_changes = [
+      initialization[0].user_account,
+      initialization[0].user_data_file_id,
+    ]
+  }
+}

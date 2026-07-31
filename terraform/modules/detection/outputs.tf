@@ -22,3 +22,8 @@ output "cloudtrail_sqs_queue_url" {
   description = "CloudTrail notification queue URL for Filebeat aws-s3 input"
   value       = aws_sqs_queue.cloudtrail_notifications.id
 }
+
+output "guardduty_detector_arn" {
+  description = "GuardDuty detector ARN; scopes the Agent's findings-read policy."
+  value       = aws_guardduty_detector.this.arn
+}

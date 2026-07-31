@@ -19,6 +19,7 @@ module "iam" {
     module.storage.flowlogs_bucket_arn,
   ]
   cloudtrail_sqs_queue_arn = module.detection.cloudtrail_sqs_queue_arn
+  guardduty_detector_arn   = module.detection.guardduty_detector_arn
 }
 
 module "detection" {

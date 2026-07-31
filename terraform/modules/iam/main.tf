@@ -77,3 +77,57 @@ resource "aws_iam_user_policy_attachment" "filebeat_sqs_read" {
 resource "aws_iam_access_key" "filebeat_local" {
   user = aws_iam_user.filebeat_local.name
 }
+
+data "aws_iam_policy_document" "sqs_read" {
+  statement {
+    effect    = "Allow"
+    actions   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
+    resources = [var.cloudtrail_sqs_queue_arn]
+  }
+}
+
+resource "aws_iam_policy" "sqs_read" {
+  name        = "elastic-cloudtrail-sqs-read-${var.environment}"
+  description = "Filebeat: receive/delete CloudTrail notification messages"
+  policy      = data.aws_iam_policy_document.sqs_read.json
+}
+
+resource "aws_iam_role_policy_attachment" "sqs_read" {
+  role       = aws_iam_role.elastic_instance.name
+  policy_arn = aws_iam_policy.sqs_read.arn
+}
+
+# GuardDuty API read so the Elastic Agent can pull findings directly,
+# rather than via S3/SQS — no notification queue exists on the findings bucket.
+data "aws_iam_policy_document" "guardduty_read" {
+  statement {
+    sid       = "ListDetectors"
+    effect    = "Allow"
+    actions   = ["guardduty:ListDetectors"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "ReadFindings"
+    effect = "Allow"
+    actions = [
+      "guardduty:ListFindings",
+      "guardduty:GetFindings",
+    ]
+    resources = [
+      var.guardduty_detector_arn,
+      "${var.guardduty_detector_arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_policy" "guardduty_read" {
+  name        = "elastic-guardduty-read-${var.environment}"
+  description = "Elastic Agent: list and fetch GuardDuty findings via API"
+  policy      = data.aws_iam_policy_document.guardduty_read.json
+}
+
+resource "aws_iam_user_policy_attachment" "filebeat_guardduty_read" {
+  user       = aws_iam_user.filebeat_local.name
+  policy_arn = aws_iam_policy.guardduty_read.arn
+}

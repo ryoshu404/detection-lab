@@ -38,4 +38,4 @@ endpoint_hostname  = "linux-endpoint"
 endpoint_cores     = 2
 endpoint_memory_mb = 3072
 endpoint_disk_gb   = 20
-endpoint_ip        = "192.168.1.13/24"
+endpoint_ip        = "192.168.1.31/24"

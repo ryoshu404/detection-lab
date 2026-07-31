@@ -133,7 +133,7 @@ resource "proxmox_virtual_environment_container" "fleet" {
 resource "proxmox_virtual_environment_file" "linux_endpoint_cloud_init" {
   content_type = "snippets"
   datastore_id = var.snippet_datastore
-  node_name    = var.proxmox_node
+  node_name    = var.proxmox_node_2
   source_raw {
     file_name = "linux-endpoint-cloud-init.yaml"
     data      = <<-EOT
@@ -158,7 +158,7 @@ resource "proxmox_virtual_environment_file" "linux_endpoint_cloud_init" {
 
 resource "proxmox_virtual_environment_vm" "linux_endpoint" {
   name      = var.endpoint_hostname
-  node_name = var.proxmox_node
+  node_name = var.proxmox_node_2
   vm_id     = var.endpoint_vmid
   tags      = ["lab", "endpoint", "linux", "terraform"]
 

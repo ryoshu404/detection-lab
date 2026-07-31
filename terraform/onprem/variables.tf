@@ -160,7 +160,7 @@ variable "endpoint_vmid" {
 variable "endpoint_ip" {
   description = "Static IP/CIDR for the Linux endpoint on the Hosts VLAN."
   type        = string
-  default     = "192.168.1.13/24"
+  default     = "192.168.1.31/24"
 }
 
 variable "endpoint_cores" {
@@ -179,4 +179,10 @@ variable "endpoint_disk_gb" {
   description = "Disk size in GB for the Linux endpoint."
   type        = number
   default     = 20
+}
+
+variable "proxmox_node_2" {
+  description = "Second Proxmox node; hosts detection targets."
+  type        = string
+  default     = "pve2"
 }

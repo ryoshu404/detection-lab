@@ -1,8 +1,8 @@
 # Brings up WinRM so Packer can connect. Run from the answer file's
-# FirstLogonCommands; until it finishes, the build sits waiting.
+# FirstLogonCommands; the build waits until this completes.
 #
 # HTTP with basic auth and unencrypted traffic is acceptable here: the VM
-# exists for minutes on an isolated lab bridge during the build only.
+# exists for the duration of the build on an isolated lab bridge.
 
 $ErrorActionPreference = "Stop"
 
@@ -18,7 +18,7 @@ winrm set winrm/config '@{MaxTimeoutms="7200000"}'
 Enable-PSRemoting -Force -SkipNetworkProfileCheck
 
 New-NetFirewallRule -DisplayName "WinRM HTTP (lab)" -Direction Inbound `
-  -LocalPort 5985 -Protocol TCP -Action Allow -ErrorAction SilentlyContinue
+  -LocalPort 5985 -Protocol TCP -Action Allow -Profile Any -ErrorAction SilentlyContinue
 
 Set-Service -Name WinRM -StartupType Automatic
 Restart-Service WinRM

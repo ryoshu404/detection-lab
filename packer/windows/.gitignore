@@ -1,3 +1,4 @@
 *.auto.pkrvars.hcl
 !*.auto.pkrvars.hcl.example
 packer_cache/
+answer_files/Autounattend.xml

@@ -1,0 +1,12 @@
+# Copy to windows11.auto.pkrvars.hcl and fill in. That file is gitignored.
+
+proxmox_url      = "https://192.168.1.30:8006/api2/json"
+proxmox_username = "terraform@pve!tf"
+proxmox_token    = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+proxmox_node     = "pve2"
+
+windows_iso = "local:iso/Win11_25H2_English_x64_v2.iso"
+virtio_iso  = "local:iso/virtio-win.iso"
+
+# Used by the answer file and for WinRM during the build.
+admin_password = "CHANGEME"

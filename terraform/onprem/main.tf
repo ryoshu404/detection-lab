@@ -200,3 +200,41 @@ resource "proxmox_virtual_environment_vm" "linux_endpoint" {
     ]
   }
 }
+
+resource "proxmox_virtual_environment_container" "builder" {
+  node_name    = var.proxmox_node_2
+  vm_id        = var.builder_ctid
+  unprivileged = true
+  tags         = ["lab", "builder", "ci", "terraform"]
+
+  cpu {
+    cores = var.builder_cores
+  }
+  memory {
+    dedicated = var.builder_memory_mb
+  }
+  disk {
+    datastore_id = var.vm_datastore
+    size         = var.builder_disk_gb
+  }
+  network_interface {
+    name   = "eth0"
+    bridge = var.vm_bridge
+  }
+  operating_system {
+    template_file_id = var.lxc_template_file_id
+    type             = "debian"
+  }
+  initialization {
+    hostname = var.builder_hostname
+    ip_config {
+      ipv4 {
+        address = var.builder_ip
+        gateway = var.vm_gateway
+      }
+    }
+    user_account {
+      keys = [trimspace(var.ssh_public_key)]
+    }
+  }
+}

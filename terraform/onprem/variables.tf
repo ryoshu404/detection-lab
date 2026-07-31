@@ -186,3 +186,39 @@ variable "proxmox_node_2" {
   type        = string
   default     = "pve2"
 }
+
+variable "builder_hostname" {
+  description = "Hostname for the build/CI container."
+  type        = string
+  default     = "builder"
+}
+
+variable "builder_ctid" {
+  description = "Container ID for the build/CI container."
+  type        = number
+  default     = 104
+}
+
+variable "builder_ip" {
+  description = "Static IP/CIDR for the build/CI container."
+  type        = string
+  default     = "192.168.1.32/24"
+}
+
+variable "builder_cores" {
+  description = "CPU cores for the build/CI container."
+  type        = number
+  default     = 2
+}
+
+variable "builder_memory_mb" {
+  description = "RAM in MB for the build/CI container."
+  type        = number
+  default     = 2048
+}
+
+variable "builder_disk_gb" {
+  description = "Root disk size in GB for the build/CI container."
+  type        = number
+  default     = 20
+}

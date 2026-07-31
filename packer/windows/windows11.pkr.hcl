@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.2.0"
+      version = ">= 1.2.2"
       source  = "github.com/hashicorp/proxmox"
     }
   }
@@ -19,12 +19,23 @@ source "proxmox-iso" "windows11" {
   vm_id                = var.vm_id
   vm_name              = var.vm_name
   template_name        = var.template_name
-  template_description = "Windows 11 endpoint, Sysmon (sysmon-modular). Built {{ isotime \"2006-01-02\" }}"
+  template_description = "Windows 11 Pro endpoint, Sysmon (sysmon-modular). Built ${formatdate("YYYY-MM-DD", timestamp())}"
   os                   = "win11"
 
-  # --- Firmware: UEFI + Secure Boot + TPM 2.0 (Win11 requirements) ---
-  bios    = "ovmf"
-  machine = "q35"
+  # --- CPU ---
+  # kvm64 (the default) lacks POPCNT and SSE4.2, which Windows 11 24H2+
+  # requires. Booting the installer with it fails silently: the bootloader
+  # starts, fails its CPU check, and returns to firmware.
+  cpu_type = "x86-64-v2-AES"
+  cores    = var.vm_cores
+  sockets  = 1
+  memory   = var.vm_memory_mb
+
+  machine    = "q35"
+  qemu_agent = true
+
+  # --- Firmware: UEFI + Secure Boot + TPM 2.0 ---
+  bios = "ovmf"
 
   efi_config {
     efi_storage_pool  = var.storage_pool
@@ -34,67 +45,74 @@ source "proxmox-iso" "windows11" {
 
   tpm_config {
     tpm_storage_pool = var.storage_pool
-    version          = "v2.0"
+    tpm_version      = "v2.0"
   }
 
-  # --- Resources ---
-  cores  = var.vm_cores
-  memory = var.vm_memory_mb
-
-  scsi_controller = "virtio-scsi-single"
-
+  # --- Disk ---
   disks {
-    type         = "scsi"
-    disk_size    = var.vm_disk_size
+    type         = "sata"
     storage_pool = var.storage_pool
-    format       = "raw"
-    cache_mode   = "none"
-    io_thread    = true
+    disk_size    = var.vm_disk_size
+    cache_mode   = "writeback"
+    discard      = true
   }
 
+  # --- Network ---
   network_adapters {
-    model  = "virtio"
+    model  = "e1000"
     bridge = var.vm_bridge
   }
 
-  # --- Install media ---
-  boot_iso {
-    type     = "sata"
-    iso_file = var.windows_iso
-    unmount  = true
+  vga {
+    type = "qxl"
   }
 
-  # Answer file + provisioning scripts, built into an ISO by Packer.
-  # Proxmox has no floppy support, so this is how Windows Setup finds
-  # Autounattend.xml.
+  # --- Install media ---
+  # Everything on IDE. The boot ISO takes ide0, so the answer file and
+  # VirtIO drivers follow on ide1 and ide2.
+  boot_iso {
+    type         = "ide"
+    index        = 0
+    iso_file     = var.windows_iso
+    iso_checksum = "none"
+    unmount      = true
+  }
+
+  # Answer file plus first-boot scripts. Proxmox has no floppy support, so
+  # Packer builds these into an ISO. The cidata label lets scripts find the
+  # volume without assuming a drive letter.
   additional_iso_files {
-    device           = "sata1"
-    iso_storage_pool = var.iso_storage_pool
-    unmount          = true
+    type              = "ide"
+    index             = 1
+    iso_storage_pool  = var.iso_storage_pool
+    cd_label          = "cidata"
+    unmount           = true
+    keep_cdrom_device = false
     cd_files = [
       "./answer_files/Autounattend.xml",
       "./scripts/enable-winrm.ps1",
     ]
   }
 
-  # VirtIO drivers — Windows Setup cannot see a virtio disk or NIC without
-  # these, and no network means Packer can never connect.
+  # Kept mounted for the post-install guest tools, not for Setup.
   additional_iso_files {
-    device   = "sata2"
-    iso_file = var.virtio_iso
-    unmount  = true
+    type         = "ide"
+    index        = 2
+    iso_file     = var.virtio_iso
+    iso_checksum = "none"
+    unmount      = true
   }
 
   # --- Boot ---
-  # Clears the "Press any key to boot from CD or DVD" prompt. If the build
-  # stalls at a black screen, this is the first thing to adjust.
-  boot_wait    = "3s"
-  boot_command = ["<spacebar>"]
+  # Enter, not space: the "press any key" prompt does not reliably accept
+  # space through QEMU's virtual keyboard.
+  boot         = "order=sata;ide0"
+  boot_wait    = "5s"
+  boot_command = ["<enter><enter>"]
 
   # --- Communicator ---
-  # WinRM is enabled by enable-winrm.ps1, run from the answer file's
-  # FirstLogonCommands. Timeout is generous: Windows Setup plus updates
-  # is slow.
+  # WinRM is brought up by enable-winrm.ps1, run from the answer file's
+  # FirstLogonCommands. Nothing connects until that runs.
   communicator   = "winrm"
   winrm_username = "Administrator"
   winrm_password = var.admin_password
@@ -108,12 +126,6 @@ build {
   sources = ["source.proxmox-iso.windows11"]
 
   provisioner "powershell" {
-    scripts = [
-      "./scripts/install-sysmon.ps1",
-    ]
-  }
-
-  provisioner "powershell" {
-    inline = ["Write-Host 'Provisioning complete.'"]
+    scripts = ["./scripts/install-sysmon.ps1"]
   }
 }

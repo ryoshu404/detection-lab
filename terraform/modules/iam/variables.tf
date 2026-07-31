@@ -13,21 +13,7 @@ variable "cloudtrail_sqs_queue_arn" {
   type        = string
 }
 
-data "aws_iam_policy_document" "sqs_read" {
-  statement {
-    effect    = "Allow"
-    actions   = ["sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes"]
-    resources = [var.cloudtrail_sqs_queue_arn]
-  }
-}
-
-resource "aws_iam_policy" "sqs_read" {
-  name        = "elastic-cloudtrail-sqs-read-${var.environment}"
-  description = "Filebeat: receive/delete CloudTrail notification messages"
-  policy      = data.aws_iam_policy_document.sqs_read.json
-}
-
-resource "aws_iam_role_policy_attachment" "sqs_read" {
-  role       = aws_iam_role.elastic_instance.name
-  policy_arn = aws_iam_policy.sqs_read.arn
+variable "guardduty_detector_arn" {
+  description = "GuardDuty detector ARN; grants the Agent findings read access."
+  type        = string
 }

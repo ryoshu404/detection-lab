@@ -364,3 +364,91 @@ resource "proxmox_virtual_environment_vm" "ghosts" {
     ]
   }
 }
+
+# Passive network sensor. Two interfaces: net0 for management, net1 receiving
+# an OVS port mirror with no address of its own (ADR-007). The mirror itself is
+# configured with ovs-vsctl on pve2 and is not represented here.
+resource "proxmox_virtual_environment_file" "sensor_cloud_init" {
+  content_type = "snippets"
+  datastore_id = var.snippet_datastore
+  node_name    = var.proxmox_node_2
+  source_raw {
+    file_name = "sensor-cloud-init.yaml"
+    data      = <<-EOT
+      #cloud-config
+      hostname: ${var.sensor_hostname}
+      users:
+        - name: ${var.vm_username}
+          groups: [sudo]
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          ssh_authorized_keys:
+            - ${var.ssh_public_key}
+      package_update: true
+      packages:
+        - qemu-guest-agent
+        - curl
+      runcmd:
+        - systemctl enable --now qemu-guest-agent
+      EOT
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "sensor" {
+  name      = var.sensor_hostname
+  node_name = var.proxmox_node_2
+  vm_id     = var.sensor_vmid
+  tags      = ["lab", "tooling", "sensor", "terraform"]
+
+  agent {
+    enabled = true
+  }
+  cpu {
+    cores = var.sensor_cores
+    type  = "host"
+  }
+  memory {
+    dedicated = var.sensor_memory_mb
+  }
+  disk {
+    datastore_id = var.vm_datastore
+    file_id      = var.vm_image_file_id
+    interface    = "virtio0"
+    size         = var.sensor_disk_gb
+    iothread     = true
+    discard      = "on"
+  }
+
+  # net0: management
+  network_device {
+    bridge = var.vm_bridge
+  }
+
+  # net1: mirror target, no address
+  network_device {
+    bridge = var.vm_bridge
+  }
+
+  initialization {
+    datastore_id      = var.vm_datastore
+    user_data_file_id = proxmox_virtual_environment_file.sensor_cloud_init.id
+    ip_config {
+      ipv4 {
+        address = var.sensor_ip
+        gateway = var.vm_gateway
+      }
+    }
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      initialization[0].user_account,
+      initialization[0].user_data_file_id,
+    ]
+  }
+}

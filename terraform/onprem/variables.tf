@@ -288,3 +288,39 @@ variable "ghosts_disk_gb" {
   type        = number
   default     = 40
 }
+
+variable "sensor_hostname" {
+  description = "Hostname for the network sensor."
+  type        = string
+  default     = "sensor"
+}
+
+variable "sensor_vmid" {
+  description = "VMID for the network sensor."
+  type        = number
+  default     = 107
+}
+
+variable "sensor_ip" {
+  description = "Static IP/CIDR for the sensor's management interface."
+  type        = string
+  default     = "192.168.1.35/24"
+}
+
+variable "sensor_cores" {
+  description = "CPU cores for the sensor."
+  type        = number
+  default     = 2
+}
+
+variable "sensor_memory_mb" {
+  description = "RAM in MB for the sensor."
+  type        = number
+  default     = 4096
+}
+
+variable "sensor_disk_gb" {
+  description = "Disk size in GB for the sensor."
+  type        = number
+  default     = 40
+}

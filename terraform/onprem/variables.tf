@@ -252,3 +252,39 @@ variable "win_endpoint_memory_mb" {
   type        = number
   default     = 8192
 }
+
+variable "ghosts_hostname" {
+  description = "Hostname for the GHOSTS server."
+  type        = string
+  default     = "ghosts"
+}
+
+variable "ghosts_vmid" {
+  description = "VMID for the GHOSTS server."
+  type        = number
+  default     = 106
+}
+
+variable "ghosts_ip" {
+  description = "Static IP/CIDR for the GHOSTS server."
+  type        = string
+  default     = "192.168.1.34/24"
+}
+
+variable "ghosts_cores" {
+  description = "CPU cores for the GHOSTS server."
+  type        = number
+  default     = 2
+}
+
+variable "ghosts_memory_mb" {
+  description = "RAM in MB for the GHOSTS server."
+  type        = number
+  default     = 6144
+}
+
+variable "ghosts_disk_gb" {
+  description = "Disk size in GB for the GHOSTS server."
+  type        = number
+  default     = 40
+}

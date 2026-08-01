@@ -285,3 +285,82 @@ resource "proxmox_virtual_environment_vm" "windows_endpoint" {
     model  = "virtio"
   }
 }
+
+# GHOSTS server: benign user-activity simulation, feeding realistic baseline
+# noise to the endpoints so detections are tuned against something other than
+# silence. Runs as a VM rather than an LXC because the API stack is five Docker
+# containers, and Docker in an unprivileged container needs nesting enabled.
+resource "proxmox_virtual_environment_file" "ghosts_cloud_init" {
+  content_type = "snippets"
+  datastore_id = var.snippet_datastore
+  node_name    = var.proxmox_node_2
+  source_raw {
+    file_name = "ghosts-cloud-init.yaml"
+    data      = <<-EOT
+      #cloud-config
+      hostname: ${var.ghosts_hostname}
+      users:
+        - name: ${var.vm_username}
+          groups: [sudo, docker]
+          shell: /bin/bash
+          sudo: ALL=(ALL) NOPASSWD:ALL
+          ssh_authorized_keys:
+            - ${var.ssh_public_key}
+      package_update: true
+      packages:
+        - qemu-guest-agent
+        - curl
+        - git
+        - ca-certificates
+      runcmd:
+        - systemctl enable --now qemu-guest-agent
+        - curl -fsSL https://get.docker.com | sh
+        - usermod -aG docker ${var.vm_username}
+      EOT
+  }
+}
+
+resource "proxmox_virtual_environment_vm" "ghosts" {
+  name      = var.ghosts_hostname
+  node_name = var.proxmox_node_2
+  vm_id     = var.ghosts_vmid
+  tags      = ["lab", "tooling", "ghosts", "terraform"]
+
+  agent {
+    enabled = true
+  }
+  cpu {
+    cores = var.ghosts_cores
+    type  = "host"
+  }
+  memory {
+    dedicated = var.ghosts_memory_mb
+  }
+  disk {
+    datastore_id = var.vm_datastore
+    file_id      = var.vm_image_file_id
+    interface    = "virtio0"
+    size         = var.ghosts_disk_gb
+    iothread     = true
+    discard      = "on"
+  }
+  network_device {
+    bridge = var.vm_bridge
+  }
+  initialization {
+    datastore_id      = var.vm_datastore
+    user_data_file_id = proxmox_virtual_environment_file.ghosts_cloud_init.id
+    ip_config {
+      ipv4 {
+        address = var.ghosts_ip
+        gateway = var.vm_gateway
+      }
+    }
+  }
+  lifecycle {
+    ignore_changes = [
+      initialization[0].user_account,
+      initialization[0].user_data_file_id,
+    ]
+  }
+}

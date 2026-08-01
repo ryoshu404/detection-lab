@@ -222,3 +222,33 @@ variable "builder_disk_gb" {
   type        = number
   default     = 20
 }
+
+variable "windows_template_vmid" {
+  description = "VMID of the Packer-built Windows 11 template."
+  type        = number
+  default     = 9000
+}
+
+variable "win_endpoint_hostname" {
+  description = "Name for the Windows endpoint VM."
+  type        = string
+  default     = "win-endpoint"
+}
+
+variable "win_endpoint_vmid" {
+  description = "VMID for the Windows endpoint."
+  type        = number
+  default     = 105
+}
+
+variable "win_endpoint_cores" {
+  description = "CPU cores for the Windows endpoint."
+  type        = number
+  default     = 4
+}
+
+variable "win_endpoint_memory_mb" {
+  description = "RAM in MB for the Windows endpoint."
+  type        = number
+  default     = 8192
+}

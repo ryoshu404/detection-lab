@@ -131,3 +131,52 @@ resource "aws_iam_user_policy_attachment" "filebeat_guardduty_read" {
   user       = aws_iam_user.filebeat_local.name
   policy_arn = aws_iam_policy.guardduty_read.arn
 }
+
+# Elasticsearch snapshots to S3. Like filebeat-local, this runs off-AWS on
+# Proxmox with no instance role, so it authenticates with static keys held
+# in the Elasticsearch keystore. DeleteObject is required: SLM expiry has to
+# remove segments, not just stop writing them.
+resource "aws_iam_user" "elastic_snapshots" {
+  name = "elastic-snapshots-${var.environment}"
+}
+
+data "aws_iam_policy_document" "elastic_snapshot_write" {
+  statement {
+    sid    = "ListSnapshotBucket"
+    effect = "Allow"
+    actions = [
+      "s3:ListBucket",
+      "s3:GetBucketLocation",
+      "s3:ListBucketMultipartUploads",
+    ]
+    resources = [var.snapshot_bucket_arn]
+  }
+
+  statement {
+    sid    = "ReadWriteSnapshotObjects"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:AbortMultipartUpload",
+      "s3:ListMultipartUploadParts",
+    ]
+    resources = ["${var.snapshot_bucket_arn}/*"]
+  }
+}
+
+resource "aws_iam_policy" "elastic_snapshot_write" {
+  name        = "elastic-snapshot-write-${var.environment}"
+  description = "Elasticsearch: read, write, and expire snapshots in the snapshot bucket"
+  policy      = data.aws_iam_policy_document.elastic_snapshot_write.json
+}
+
+resource "aws_iam_user_policy_attachment" "elastic_snapshots" {
+  user       = aws_iam_user.elastic_snapshots.name
+  policy_arn = aws_iam_policy.elastic_snapshot_write.arn
+}
+
+resource "aws_iam_access_key" "elastic_snapshots" {
+  user = aws_iam_user.elastic_snapshots.name
+}

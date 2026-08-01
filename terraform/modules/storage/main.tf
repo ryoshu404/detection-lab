@@ -4,6 +4,7 @@ locals {
     guardduty  = "guardduty-findings"
     flowlogs   = "vpc-flowlogs"
     archive    = "log-archive"
+    snapshots  = "elastic-snapshots"
   }
 }
 
@@ -20,8 +21,10 @@ resource "aws_s3_bucket" "this" {
   }
 }
 
+# Snapshots are excluded: Elasticsearch manages its own object lifecycle in the
+# repository, and versioning would retain segments it has deleted.
 resource "aws_s3_bucket_versioning" "this" {
-  for_each = aws_s3_bucket.this
+  for_each = { for k, v in aws_s3_bucket.this : k => v if k != "snapshots" }
   bucket   = each.value.id
 
   versioning_configuration {
@@ -62,8 +65,11 @@ resource "aws_s3_bucket_ownership_controls" "this" {
   }
 }
 
+# Snapshots are excluded: Glacier IR would add retrieval cost and latency to
+# segments Elasticsearch needs to read and delete, and SLM already expires
+# snapshots. See the snapshot-retention rule below.
 resource "aws_s3_bucket_lifecycle_configuration" "this" {
-  for_each = aws_s3_bucket.this
+  for_each = { for k, v in aws_s3_bucket.this : k => v if k != "snapshots" }
   bucket   = each.value.id
 
   rule {
@@ -267,4 +273,25 @@ data "aws_iam_policy_document" "guardduty_bucket" {
 resource "aws_s3_bucket_policy" "guardduty" {
   bucket = aws_s3_bucket.this["guardduty"].id
   policy = data.aws_iam_policy_document.guardduty_bucket.json
+}
+
+# Backstop only. SLM expires snapshots inside the repository; this catches
+# orphaned segments left by a failed delete.
+resource "aws_s3_bucket_lifecycle_configuration" "snapshots" {
+  bucket = aws_s3_bucket.this["snapshots"].id
+
+  rule {
+    id     = "expire-orphaned-segments"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = 180
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+  }
 }

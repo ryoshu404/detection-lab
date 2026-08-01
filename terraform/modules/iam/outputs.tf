@@ -18,3 +18,14 @@ output "filebeat_local_secret_access_key" {
   value       = aws_iam_access_key.filebeat_local.secret
   sensitive   = true
 }
+
+output "elastic_snapshot_access_key_id" {
+  description = "Access key ID for the Elasticsearch snapshot user."
+  value       = aws_iam_access_key.elastic_snapshots.id
+}
+
+output "elastic_snapshot_secret_access_key" {
+  description = "Secret access key for the Elasticsearch snapshot user."
+  value       = aws_iam_access_key.elastic_snapshots.secret
+  sensitive   = true
+}

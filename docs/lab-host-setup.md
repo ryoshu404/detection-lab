@@ -185,3 +185,80 @@ macOS can require re-approval after reboots or updates, so this is worth re-chec
 ## Snapshots
 
 Take a snapshot once the agent is enrolled, permissions are granted, and the VM has been rebooted to confirm all three survive a restart. A snapshot of a state that only works until it restarts is not a useful revert point.
+
+---
+
+# GHOSTS clients
+
+The server runs on `ghosts` (192.168.1.34), declared in `terraform/onprem/`. Clients are installed by hand on each endpoint and are not in Terraform. Rationale for the tool and the account separation is in ADR-010.
+
+Each endpoint runs GHOSTS under a dedicated service account rather than the administrative one, so simulated activity is distinguishable from operator activity in telemetry.
+
+| Endpoint | Client | Account | Path |
+|---|---|---|---|
+| linux-endpoint | Universal | `jsmith` | `/home/jsmith/ghosts/publish/linux-x64` |
+| win-endpoint | Windows | `spoli` | `C:\exercise\ghosts` |
+| macos-endpoint | — | — | unresolved; no darwin build ships in v9.0.0 |
+
+Every client's `config/application.{json,yaml}` needs `ApiRootUrl` set to `http://192.168.1.34:5000/api`. The `/api` suffix is required; without it the client cannot register.
+
+Confirm registration by checking that `instance/id.json` exists on the endpoint, or that the machine appears at `http://192.168.1.34:5000/api/machines` with the expected `currentUsername`.
+
+## Linux
+
+The Universal client needs .NET 9 or later. Ubuntu 22.04's apt repositories stop at 8, so use the snap:
+
+```bash
+sudo snap install dotnet --classic
+sudo apt install -y libicu-dev
+```
+
+The snap installs to `/snap/bin/dotnet`, which the client's native launcher (`./Ghosts.Client.Universal`) does not find — it only searches the standard locations and fails with "You must install .NET to run this application." Invoke the DLL through the snap binary instead. Note the DLL name is capitalised; the documentation's lowercase form does not match on a case-sensitive filesystem.
+
+Do not copy the `instance/` directory between machines or accounts — it holds the registration ID, and a copy will claim the original's identity.
+
+```ini
+# /etc/systemd/system/ghosts.service
+[Unit]
+Description=GHOSTS Client Service
+After=network.target
+
+[Service]
+ExecStart=/snap/bin/dotnet /home/jsmith/ghosts/publish/linux-x64/Ghosts.Client.Universal.dll
+WorkingDirectory=/home/jsmith/ghosts/publish/linux-x64
+Restart=always
+User=jsmith
+Group=jsmith
+Environment=DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+The documentation's example unit sets `DISPLAY=:0`; that is for GUI handlers and is omitted here, since this is a headless server running Bash, Curl, and SSH handlers only.
+
+## Windows
+
+The Windows client needs .NET Framework 4.6.1, which ships with Windows 11 — no runtime install.
+
+Its GUI handlers require an **interactive session**, so the service account has to be logged in. Auto-login is configured for `spoli`. The `netplwiz` checkbox is hidden while Windows Hello sign-in is enforced, so either disable that in Settings → Accounts → Sign-in options, or set it directly:
+
+```powershell
+$k = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+Set-ItemProperty $k AutoAdminLogon "1"
+Set-ItemProperty $k DefaultUserName "spoli"
+Set-ItemProperty $k DefaultPassword "<password>"
+```
+
+This stores the password in plaintext in the registry, readable by any local administrator. It is a deliberate tradeoff for continuous activity on a lab endpoint.
+
+The client is installed under `C:\exercise\ghosts` rather than the service account's profile, so it needs write access for `logs/`, `instance/`, and `config/`:
+
+```powershell
+icacls "C:\exercise\ghosts" /grant "spoli:(OI)(CI)M" /T
+```
+
+Run `ghosts.exe` from `spoli`'s session, not as administrator — the account that first runs it is the one recorded against the machine.
+
+Elastic Agent and Sysmon are unaffected by any of this. Both run as services under SYSTEM and continue reporting regardless of session state, so losing the auto-login costs the noise but not the monitoring.
+

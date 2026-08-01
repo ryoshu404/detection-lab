@@ -40,4 +40,4 @@ Network capture now covers any endpoint on pve2 with one sensor, independent of 
 
 The conversion is not free of edge cases. The physical NIC needs `auto` rather than `allow-vmbr0` in `/etc/network/interfaces` or the port is not added to the bridge at boot, which presents as a node with a bridge and no uplink. Physical console access is the recovery path and should be in place before the change, not after.
 
-This is host-level configuration with no Terraform representation, so the reasoning lives here and the procedure lives in `docs/proxmox-node-setup.md`. Host-based capture stays available and complementary: Sysmon gives Windows network events with process attribution, which a passive sensor cannot provide, and the two answer different questions about the same traffic.
+This is host-level configuration with no Terraform representation, so the reasoning lives here and the procedure lives in `docs/lab-host-setup.md`. Host-based capture stays available and complementary: Sysmon gives Windows network events with process attribution, which a passive sensor cannot provide, and the two answer different questions about the same traffic.

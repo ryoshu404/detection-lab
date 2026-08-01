@@ -262,3 +262,111 @@ Run `ghosts.exe` from `spoli`'s session, not as administrator — the account th
 
 Elastic Agent and Sysmon are unaffected by any of this. Both run as services under SYSTEM and continue reporting regardless of session state, so losing the auto-login costs the noise but not the monitoring.
 
+---
+
+# Network sensor
+
+Zeek runs on `sensor` (192.168.1.35), declared in `terraform/onprem/`, receiving an OVS port mirror from pve2. Rationale for the passive-sensor approach is in ADR-007.
+
+The VM has two interfaces. `eth0` carries management traffic — SSH, Fleet enrollment, shipping logs. `eth1` receives the mirror and has **no address**, so the sensor has no presence on the segment it monitors and cannot be reached across it.
+
+## Mirror configuration
+
+The mirror is created with `ovs-vsctl` on **pve2** and lives in the OVS database, not in `/etc/network/interfaces` — so backing up that file does not capture it.
+
+Endpoint tap interfaces are the sources; the sensor's second interface is the destination. Confirm the interface names first, since they follow VMID and device index:
+
+```bash
+ip -br link | grep tap
+```
+
+`tap103i0` is the Linux endpoint, `tap105i0` the Windows endpoint, `tap107i1` the sensor's capture interface. LXC guests use `veth` rather than `tap` and are not mirrored — they are tooling, not detection targets.
+
+```bash
+ovs-vsctl -- set bridge vmbr0 mirrors=@m \
+  -- --id=@src1 get port tap103i0 \
+  -- --id=@src2 get port tap105i0 \
+  -- --id=@dst get port tap107i1 \
+  -- --id=@m create mirror name=zeek-mirror \
+     select-src-port=@src1,@src2 \
+     select-dst-port=@src1,@src2 \
+     output-port=@dst
+```
+
+Listing both endpoints under `select-src-port` and `select-dst-port` captures each conversation in both directions.
+
+Verify with `ovs-vsctl list mirror` — `statistics` shows packet counts, which is the quickest confirmation traffic is flowing. Then check it arrives:
+
+```bash
+sudo tcpdump -i eth1 -c 20 -n     # on the sensor
+```
+
+Tap interfaces are recreated when a VM restarts. Whether OVS re-binds the mirror to a recreated tap of the same name has not been verified here; if mirroring stops after an endpoint reboot, check `ovs-vsctl list mirror` still shows the ports bound.
+
+## Capture interface
+
+`eth1` must be up but unaddressed. Cloud-init assigns DHCP to unconfigured interfaces by default, so netplan needs an explicit override, and cloud-init's network management has to be disabled or it regenerates the file on reboot:
+
+```bash
+echo 'network: {config: disabled}' | sudo tee /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+```
+
+```yaml
+    eth1:
+      dhcp4: false
+      dhcp6: false
+      optional: true
+```
+
+`optional: true` matters — without it boot waits for an interface that will never acquire an address.
+
+Promiscuous mode is set by Zeek itself when it starts capturing, so no separate configuration is needed. Confirm with `ip -d link show eth1 | grep -i promisc`.
+
+## Zeek
+
+Binary packages come from the openSUSE Build Service; the repository path is per-Ubuntu-release, and this host is Jammy.
+
+```bash
+echo 'deb http://download.opensuse.org/repositories/security:/zeek/xUbuntu_22.04/ /' | sudo tee /etc/apt/sources.list.d/security:zeek.list
+curl -fsSL https://download.opensuse.org/repositories/security:zeek/xUbuntu_22.04/Release.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/security_zeek.gpg > /dev/null
+sudo apt update
+sudo apt install -y zeek-8.0
+```
+
+Postfix is pulled in as a dependency for Zeek's notice emails. Choose **No configuration** — notices go to `notice.log` and are shipped to Elasticsearch, so mail is not needed.
+
+Set the capture interface in `/opt/zeek/etc/node.cfg`:
+
+```
+[zeek]
+type=standalone
+host=localhost
+interface=eth1
+```
+
+And declare the lab network in `/opt/zeek/etc/networks.cfg` so Zeek classifies traffic direction correctly.
+
+### JSON output
+
+Zeek writes TSV by default; the Elastic integration expects JSON. The `json-streaming-logs` package writes JSON alongside the TSV files:
+
+```bash
+sudo /opt/zeek/bin/zkg install corelight/json-streaming-logs
+```
+
+**Installing is not enough.** `zkg` adds the package to the bundle, but `local.zeek` must load it, and the `@load packages` line ships commented out:
+
+```bash
+sudo nano /opt/zeek/share/zeek/site/local.zeek     # uncomment @load packages
+sudo /opt/zeek/bin/zeekctl deploy
+```
+
+Output appears as `json_streaming_<name>.log`, with rotated copies as `json_streaming_<name>.1.log`. Both formats are written, which doubles log volume — if disk becomes tight, `redef LogAscii::use_json = T;` in `local.zeek` replaces TSV entirely instead.
+
+## Elastic integration
+
+The sensor runs the Zeek integration only. The System integration is removed from its policy: the box's own process and metric telemetry is noise, and its purpose is shipping network observations.
+
+Set **Base Path** to `/opt/zeek/logs/current`, and each enabled log's filename to the `json_streaming_` prefixed name — the defaults assume plain `conn.log` and will match nothing.
+
+Enabled: conn, dns, ssl, notice, weird, x509, known_services, plus http, ssh, smb_mapping, and kerberos in anticipation of Windows and emulation traffic. The industrial protocols and Zeek's own instrumentation logs (stats, telemetry, loaded_scripts) are left off. "Preserve original event" is off throughout — it duplicates each event into `event.original` for data already readable.

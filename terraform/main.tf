@@ -20,6 +20,7 @@ module "iam" {
   ]
   cloudtrail_sqs_queue_arn = module.detection.cloudtrail_sqs_queue_arn
   guardduty_detector_arn   = module.detection.guardduty_detector_arn
+  snapshot_bucket_arn      = module.storage.elastic_snapshot_bucket_arn
 }
 
 module "detection" {

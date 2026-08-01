@@ -17,3 +17,8 @@ variable "guardduty_detector_arn" {
   description = "GuardDuty detector ARN; grants the Agent findings read access."
   type        = string
 }
+
+variable "snapshot_bucket_arn" {
+  description = "Elasticsearch snapshot bucket ARN; scopes the snapshot user's policy."
+  type        = string
+}

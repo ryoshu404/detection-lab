@@ -27,3 +27,13 @@ output "guardduty_kms_key_arn" {
   description = "KMS key ARN for GuardDuty findings export"
   value       = aws_kms_key.guardduty.arn
 }
+
+output "elastic_snapshot_bucket_arn" {
+  description = "Elasticsearch snapshot bucket ARN. Scopes the snapshot user's policy in iam/."
+  value       = aws_s3_bucket.this["snapshots"].arn
+}
+
+output "elastic_snapshot_bucket_name" {
+  description = "Elasticsearch snapshot bucket name, for repository registration."
+  value       = aws_s3_bucket.this["snapshots"].id
+}

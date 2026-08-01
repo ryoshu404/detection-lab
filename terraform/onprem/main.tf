@@ -238,3 +238,50 @@ resource "proxmox_virtual_environment_container" "builder" {
     }
   }
 }
+
+# Cloned from the Packer-built template (see packer/windows). No cloud-init
+# block: Windows has no equivalent, so hostname comes from the answer file
+# and the address from a DHCP reservation.
+resource "proxmox_virtual_environment_vm" "windows_endpoint" {
+  name      = var.win_endpoint_hostname
+  node_name = var.proxmox_node_2
+  vm_id     = var.win_endpoint_vmid
+  tags      = ["lab", "endpoint", "windows", "terraform"]
+
+  bios    = "ovmf"
+  machine = "q35"
+
+  clone {
+    vm_id = var.windows_template_vmid
+    full  = true
+  }
+
+  agent {
+    enabled = true
+  }
+
+  cpu {
+    cores = var.win_endpoint_cores
+    type  = "x86-64-v2-AES"
+  }
+
+  memory {
+    dedicated = var.win_endpoint_memory_mb
+  }
+
+  efi_disk {
+    datastore_id      = var.vm_datastore
+    type              = "4m"
+    pre_enrolled_keys = true
+  }
+
+  tpm_state {
+    datastore_id = var.vm_datastore
+    version      = "v2.0"
+  }
+
+  network_device {
+    bridge = var.vm_bridge
+    model  = "virtio"
+  }
+}

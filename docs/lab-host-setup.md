@@ -1,17 +1,22 @@
-# Proxmox Node Setup
+# Lab Host Setup
 
-The hypervisor layer is not managed by Terraform. The bpg provider creates guests through the Proxmox API; it does not install Proxmox, form clusters, or configure host networking. Those are day-zero tasks, done by hand, and this is the record of how — so a node can be rebuilt without reconstructing the choices from memory.
+The host layer is not managed by Terraform. The bpg provider creates guests through the Proxmox API; it does not install Proxmox, form clusters, or configure host networking. The Mac mini is outside Terraform entirely — Parallels has no provider worth depending on. Those are day-zero tasks, done by hand, and this is the record of how, so a host can be rebuilt without reconstructing the choices from memory.
 
-Guests are in `terraform/onprem/`. Decisions behind the cluster and network layout are in ADR-005 and ADR-007.
+Guests on Proxmox are in `terraform/onprem/`. Decisions behind the cluster and network layout are in ADR-005 and ADR-007; macOS telemetry is in ADR-009.
 
-## Current nodes
+## Hosts
 
-| Node | Hardware | Address | Role |
+| Host | Hardware | Address | Role |
 |---|---|---|---|
 | `pve` | ThinkCentre M75q Gen2, Ryzen 5 PRO 4650GE, 32 GB | 192.168.1.10 | Detection platform — Elastic, Kibana, Fleet, Guacamole |
 | `pve2` | OptiPlex 5090 Micro, i5-10500T, 32 GB | 192.168.1.30 | Detection targets — endpoints, supporting tooling |
+| Mac mini | M4 | — | macOS endpoint, as a Parallels VM |
 
-Both nodes run Proxmox VE 9.2.5 on Debian 13 (Trixie).
+Both Proxmox nodes run VE 9.2.5 on Debian 13 (Trixie).
+
+---
+
+# Proxmox nodes
 
 ## BIOS
 
@@ -19,7 +24,6 @@ Settings that matter, and the symptom when they're wrong:
 
 - **Virtualization** — Intel VT-x, or AMD-V/SVM on the Ryzen box. Off means no VMs.
 - **VT for Direct I/O (VT-d)** — enabled; only needed for device passthrough, but cheaper to set now.
-- **SATA Operation → AHCI** — Dell ships OptiPlex machines in RAID (Intel RST) mode, and the Linux installer then shows **no disks at all**. This is the setting that wastes an hour if you don't know about it.
 - **Secure Boot → disabled** — Proxmox 9 supports it, but disabling removes a variable.
 - **AC Power Recovery → Power On** — an always-on cluster node should come back after an outage without someone pressing a button.
 - **TXT → leave disabled.** Unrelated to virtualization, and enabling it can break boot.
@@ -126,3 +130,58 @@ VM disks live in the `pve-data` LVM thin pool. `lvs` shows *allocated blocks*, n
 ## Guest conventions
 
 - **Guest swap is off, host swap is on.** Elasticsearch should not swap; the hypervisor benefits from the cushion.
+
+---
+
+# Mac mini
+
+The macOS endpoint is a Parallels VM rather than the host itself, so attack emulation runs somewhere disposable and snapshots are available for revert cycles. It is the only guest in the lab not declared in Terraform.
+
+## VM creation
+
+Choose **Customize settings before installation** — networking has to be set before first boot.
+
+- **Network: Bridged → Ethernet**, not Default Adapter. Default follows whatever the host is using and shifts if interfaces change; bridged Ethernet is deterministic and puts the VM on the LAN where Fleet can reach it. Shared/NAT does not work.
+- **8 GB RAM, 4 cores, 80–100 GB disk.**
+- **Startup and shutdown: Custom** — start when the Mac starts, keep running when the window closes. The default "Always Ready in Background" is built for running a single app, not for an endpoint you manage.
+
+Parallels installs the host's macOS version by default; an IPSW can be supplied to install a different one. Apple's licensing permits two macOS VMs per host.
+
+The local account is `macosuser`, not the `labadmin` used on the Linux and Windows endpoints.
+
+## Always-on settings
+
+The VM should stay running and logged in so telemetry is continuous and it is usable unattended.
+
+```bash
+# in the VM, and on the Mac mini host — a sleeping host stops the VM
+sudo pmset -a sleep 0 displaysleep 0 disksleep 0
+pmset -g          # verify
+```
+
+Then in System Settings:
+
+- **Lock Screen** — screen saver Never, display off Never, require password Never
+- **Users & Groups** — automatic login as `macosuser`
+
+Automatic login is greyed out while FileVault is on. Turn FileVault off; for a disposable lab VM it adds nothing and complicates snapshots.
+
+## Elastic Defend permissions
+
+Defend needs permissions that would normally arrive via an MDM profile. Without one they are granted by hand, and the integration reports unhealthy until they are:
+
+- **Privacy & Security** — an "Allow" prompt appears for the blocked Elastic system extension
+- **Privacy & Security → Full Disk Access** — enable `ElasticEndpoint`, adding `/Library/Elastic/Endpoint/elastic-endpoint` manually if it is not listed
+
+A reboot is often needed before the extension loads. Verify:
+
+```bash
+sudo systemextensionsctl list      # expect the Elastic extension activated enabled
+sudo elastic-agent status --output full
+```
+
+macOS can require re-approval after reboots or updates, so this is worth re-checking rather than assuming it persists. Which sources are enabled and why is in ADR-009.
+
+## Snapshots
+
+Take a snapshot once the agent is enrolled, permissions are granted, and the VM has been rebooted to confirm all three survive a restart. A snapshot of a state that only works until it restarts is not a useful revert point.

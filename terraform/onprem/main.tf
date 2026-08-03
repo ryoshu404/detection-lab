@@ -150,8 +150,37 @@ resource "proxmox_virtual_environment_file" "linux_endpoint_cloud_init" {
       packages:
         - qemu-guest-agent
         - curl
+      write_files:
+        - path: /etc/logrotate.d/rsyslog
+          content: |
+            /var/log/syslog
+            /var/log/mail.info
+            /var/log/mail.warn
+            /var/log/mail.err
+            /var/log/mail.log
+            /var/log/daemon.log
+            /var/log/kern.log
+            /var/log/auth.log
+            /var/log/user.log
+            /var/log/cron.log
+            /var/log/debug
+            /var/log/messages
+            {
+                rotate 7
+                daily
+                maxsize 100M
+                missingok
+                notifempty
+                compress
+                delaycompress
+                sharedscripts
+                postrotate
+                    /usr/lib/rsyslog/rsyslog-rotate
+                endscript
+            }
       runcmd:
         - systemctl enable --now qemu-guest-agent
+        - systemctl restart rsyslog
       EOT
   }
 }
@@ -312,6 +341,13 @@ resource "proxmox_virtual_environment_file" "ghosts_cloud_init" {
         - curl
         - git
         - ca-certificates
+      write_files:
+        - path: /etc/docker/daemon.json
+          content: |
+            {
+              "log-driver": "json-file",
+              "log-opts": { "max-size": "50m", "max-file": "3" }
+            }
       runcmd:
         - systemctl enable --now qemu-guest-agent
         - curl -fsSL https://get.docker.com | sh

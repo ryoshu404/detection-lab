@@ -42,8 +42,10 @@ The snapshot bucket is excluded from two things the log buckets get. **Versionin
 
 ## Consequences
 
-The first full snapshot was 2 GB and took 66 seconds; the next was 14 seconds, confirming incremental behaviour. At that size S3 costs well under a dollar a month, which is noise against the existing AWS spend.
+The first full snapshot was 2 GB and took about a minute; the next was seconds, confirming incremental behaviour. At that size S3 costs well under a dollar a month, which is noise against the existing AWS spend.
 
-Two things worth knowing. **`logs@lifecycle` is x-pack-managed**, so a stack upgrade may reset it — worth re-checking the delete phase after any upgrade. And **host metrics dominate the data volume**: `metrics-system.process` at 522 MB and `metrics-system.diskio` at 476 MB against Sysmon's 20 MB. Over half of what is retained and backed up is CPU and disk-IO samples with no detection value, collected by the System integration's defaults. That is accepted for now rather than tuned, but it means retention budget is mostly being spent on the wrong data, and disabling metrics collection on the agent policies is the obvious lever if space becomes tight.
+`logs@lifecycle` is x-pack-managed, so a stack upgrade may reset the delete phase — re-check after any upgrade. Confirmed present after the last policy edit: rollover at `max_age: 30d` alongside the 30 GB size condition, so at lab volume rollover is age-driven and the delete phase counts from there, giving the intended ~120-day effective retention.
 
-Nothing will actually be deleted until roughly November, since the oldest indices rolled over in July. The policy is protective rather than immediately active.
+Two categories dominate what is retained, and neither is detection telemetry. Host metrics from the System integration's defaults — process, diskio, network, and cpu samples — are the larger share, collected continuously and useful to nothing the lab does. Disabling the `metrics-system.*` data streams on the agent policies is the obvious lever and costs no detection capability.
+
+The second category is not a retention-policy problem at all but an unbounded-log problem upstream of Elasticsearch: components writing without a size ceiling can fill a host's disk independently of ILM. This surfaced on two hosts — a GHOSTS client logging at TRACE into the systemd journal, and the GHOSTS API's Docker json-file log growing without limit until it filled the host. ILM governs what Elasticsearch retains; it does nothing for logs on the endpoints and tooling hosts, which need their own bounds (logrotate, Docker log-opts), landed in `terraform/onprem` so a rebuild keeps them.

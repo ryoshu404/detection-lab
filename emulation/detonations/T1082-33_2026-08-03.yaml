@@ -1,0 +1,21 @@
+technique: T1082-33
+attack_id: T1082
+name: sysctl to gather macOS hardware info
+tool: atomic
+platform: macos
+host: macos-endpoint
+principal: root
+start: 2026-08-03T02:32:27Z
+end: 2026-08-03T02:32:28Z
+telemetry:
+  - logs-endpoint.events.process
+artifacts:
+  - none
+notes: >
+  Ran sysctl -n hw.model (returned VirtualMac2,1, the Parallels VM id), parented to
+  pwsh. Elastic Defend ESF capture confirmed working — process events arrive with full
+  command lines and parent chains. No GHOSTS baseline on macOS (no darwin build), so
+  the only benign activity present is Elastic's own agent noise (elastic-otel-collector
+  spawning netstat/lsof) and Homebrew's sysctl hw.cputype calls from the pwsh install.
+  Those Homebrew calls are the same discovery pattern as this technique — note as an
+  FP source in the ADS doc.

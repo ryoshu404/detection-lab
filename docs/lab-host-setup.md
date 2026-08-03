@@ -370,3 +370,92 @@ The sensor runs the Zeek integration only. The System integration is removed fro
 Set **Base Path** to `/opt/zeek/logs/current`, and each enabled log's filename to the `json_streaming_` prefixed name — the defaults assume plain `conn.log` and will match nothing.
 
 Enabled: conn, dns, ssl, notice, weird, x509, known_services, plus http, ssh, smb_mapping, and kerberos in anticipation of Windows and emulation traffic. The industrial protocols and Zeek's own instrumentation logs (stats, telemetry, loaded_scripts) are left off. "Preserve original event" is off throughout — it duplicates each event into `event.original` for data already readable.
+
+# Emulation tooling
+
+Two emulation frameworks drive real telemetry into the lab: Stratus Red Team for cloud-native AWS techniques, and Atomic Red Team for endpoint techniques.
+
+Both were manually installed.
+
+## Stratus Red Team
+
+Stratus takes no `--profile` flag; it uses the AWS SDK default credential chain. Set the profile and region in the environment before detonating:
+
+```powershell
+$env:AWS_PROFILE = "detection-lab"
+$env:AWS_REGION  = "us-east-1"
+```
+
+Warm-up provisions a technique's own prerequisite infrastructure, so a technique like `aws.defense-evasion.cloudtrail-stop` creates and stops a throwaway trail rather than touching the lab's. The lab's own multi-region trail keeps recording throughout, which is what makes the detonation observable. `stratus revert` returns the technique to its pre-detonation state for a clean re-run; `stratus cleanup <technique>` destroys the throwaway infrastructure when finished.
+
+## Atomic Red Team
+
+Installed per endpoint. Each platform installs PowerShell differently, and each has at least one gotcha that makes an install appear to succeed while doing nothing.
+
+| Endpoint | PowerShell | Atomics path | Runs as |
+|---|---|---|---|
+| win-endpoint | Windows PowerShell 5.1 (built in) | `C:\AtomicRedTeam\atomics` | Administrator |
+| linux-endpoint | `snap install powershell` (7.6) | `/root/AtomicRedTeam/atomics` | root |
+| macos-endpoint | pkg from PowerShell releases (7.6) | `/Users/macosuser/AtomicRedTeam/atomics` | root |
+
+**`-getAtomics` is silently skipped if the framework already exists.** The installer short-circuits on "already exists" and reports success without fetching the atomics library. Only `-Force` (which reinstalls the framework) triggers the fetch. A first install therefore commonly lands the framework and zero atomics; verify the atomics directory is populated before assuming the install worked.
+
+**`powershell-yaml` is a hard dependency and its failure is quiet.** ART parses atomic definitions as YAML. If `powershell-yaml` fails to install — most often a PSGallery-trust prompt on a fresh PowerShell — the framework installs but `Invoke-AtomicTest` fails at runtime with an unrelated-looking error. Install it explicitly:
+
+```powershell
+Install-Module -Name powershell-yaml -Scope AllUsers -Force
+```
+
+### Windows
+
+Windows PowerShell 5.1 blocks the install by default (`running scripts is disabled`). Set a per-process bypass — not machine-wide, since a global Bypass makes the endpoint unrepresentative and defeats the execution-policy-bypass atomics themselves:
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process -Force
+Install-AtomicRedTeam -getAtomics -Force
+```
+
+Defender: `C:\AtomicRedTeam` is added as a path exclusion so techniques execute and are captured by Sysmon rather than quarantined pre-execution. This is a deliberate lab posture — the lab validates its own detections, not Defender's — and it means Windows detections are not exercised against a realistic "EDR also caught it" scenario. Note this in the ADS doc for any Windows rule.
+
+```powershell
+Add-MpPreference -ExclusionPath "C:\AtomicRedTeam"
+```
+
+The framework installer auto-imports the module into the session, so `Invoke-AtomicTest` is available immediately after install.
+
+### Linux
+
+PowerShell Core is required first:
+
+```bash
+sudo snap install powershell --classic
+```
+
+Install as root so the module and atomics are system-wide. The atomics land in `/root/AtomicRedTeam/atomics` because the install runs under `sudo`:
+
+```bash
+sudo pwsh -Command 'Install-Module -Name powershell-yaml -Scope AllUsers -Force; Install-Module -Name invoke-atomicredteam -Scope AllUsers -Force'
+sudo pwsh -Command 'IEX (IWR "https://raw.githubusercontent.com/redcanaryco/invoke-atomicredteam/master/install-atomicredteam.ps1" -UseBasicParsing); Install-AtomicRedTeam -getAtomics -Force'
+```
+
+auditd captures execve with full command-line arguments (`process.args`), so Linux endpoint detections have equivalent command-line fidelity to Sysmon. It does not reconstruct process ancestry the way Sysmon does — the parent relationship is flat.
+
+### macOS
+
+PowerShell installs from the `osx-arm64` pkg on the PowerShell releases page; the Homebrew cask was deprecated. Resolve the current release rather than hardcoding a version:
+
+```bash
+curl -s https://api.github.com/repos/PowerShell/PowerShell/releases/latest | grep browser_download_url | grep osx-arm64
+```
+
+The module does **not** auto-import on macOS the way the framework installer does on Windows and Linux. Every detonation must import and run in the same `pwsh` invocation, and the atomics path must be passed explicitly:
+
+```bash
+sudo pwsh -Command 'Import-Module invoke-atomicredteam; Invoke-AtomicTest <technique> -PathToAtomicsFolder /Users/macosuser/AtomicRedTeam/atomics'
+```
+
+TCC: some techniques require the shell (or its parent) to hold Full Disk Access, Accessibility, or Automation permissions, and will fail with permission errors otherwise. Elastic Defend's ESF process capture is confirmed working — process events arrive with full command lines and parent chains. macOS has no GHOSTS benign-activity baseline (no darwin build ships), so any macOS detection is measured against a near-silent environment; note this as a blind spot in the ADS doc for macOS rules.
+
+## Detonation records
+
+Every detonation is logged in `emulation/detonations/` with its technique, UTC timestamp, executing host and principal, and the artifacts it produced. Those timestamps are the ground-truth labels for rule tests — the record of what was caused, when, so a later "the rule fired" can be checked against "the rule fired on the event I know I caused." Format and rationale are in `emulation/README.md`.

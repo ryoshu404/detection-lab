@@ -1,0 +1,19 @@
+technique: T1082-3
+attack_id: T1082
+name: List OS Information
+tool: atomic
+platform: linux
+host: linux-endpoint
+principal: root
+start: 2026-08-03T02:07:07Z
+end: 2026-08-03T02:07:08Z
+telemetry:
+  - logs-auditd_manager.auditd
+artifacts:
+  - none
+notes: >
+  Ran uname, cat /etc/*release, uptime and helper commands (cut, grep), parented to
+  pwsh. auditd captured execve with full process.args. Parent relationship is flat —
+  auditd does not reconstruct ancestry the way Sysmon does. GHOSTS jsmith activity in
+  the same period includes cat /etc/os-release, which is the same discovery behaviour
+  as this technique: a benign/attack collision worth carrying into the ADS doc.

@@ -1,0 +1,18 @@
+technique: T1082-1
+attack_id: T1082
+name: System Information Discovery
+tool: atomic
+platform: windows
+host: win-endpoint
+principal: Administrator
+start: 2026-08-01T23:45:08Z
+end: 2026-08-01T23:45:09Z
+telemetry:
+  - logs-windows.sysmon_operational
+artifacts:
+  - none
+notes: >
+  cmd.exe /c "systeminfo & reg query HKLM\SYSTEM\CurrentControlSet\Services\Disk\Enum",
+  parented to powershell.exe. Interactive session, so process ancestry is
+  explorer.exe -> wt.exe -> powershell.exe -> cmd.exe. The whoami.exe calls in the
+  same window are ART prereq and elevation checks, not the technique.

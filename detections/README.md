@@ -38,7 +38,6 @@ Sigma is the source format. Native EQL is permitted only for ordered-sequence de
 ## Strategy doc
 
 Every detection has `ads.md`: goal, telemetry assumptions, expected false positives, rejected alternatives, blind spots, and validation method. The validation-method section names the detonation record the rule is tested against, anchoring the doc to a reproducible attack rather than an assertion.
-git status
 
 ## Burn-in
 

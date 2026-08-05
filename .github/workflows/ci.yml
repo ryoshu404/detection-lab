@@ -1,0 +1,38 @@
+# PR gate. Runs on GitHub-hosted runners with no lab access and no secrets, so
+# it's safe on untrusted pull requests. Validates and compiles every rule.
+name: ci
+
+on:
+  pull_request:
+    paths: ["detections/**", "pipelines/**", "deploy/**", "requirements-pipeline.txt"]
+  push:
+    branches: [main]
+    paths: ["detections/**", "pipelines/**", "deploy/**", "requirements-pipeline.txt"]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-and-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install toolchain
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-pipeline.txt
+
+      - name: Validate
+        run: python deploy/validate.py detections/ --repo-root .
+
+      - name: Compile
+        run: python deploy/compile.py detections/ -p pipelines/lab-ecs.yml -f default
+
+      # Set-equality test tier goes here once the fixture harness exists:
+      # spin up a pinned Elastic service container, load a detonation fixture,
+      # run the compiled query, assert it returns exactly the labelled events.

@@ -1,0 +1,35 @@
+# Maps Sigma rules onto the lab's Elastic ECS data streams. Scoped by logsource
+# so it only touches the sources it names; other rules pass through untouched.
+name: lab-ecs
+priority: 20
+transformations:
+  - id: set_defender_index
+    type: set_state
+    key: index
+    val: logs-windows.windows_defender-*
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: windows-defender
+
+  - id: map_eventid_to_eventcode
+    type: field_name_mapping
+    mapping:
+      EventID: event.code
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: windows-defender
+
+  # event.code is a keyword in ECS, so the value must be a string ("1116" not 1116).
+  - id: eventcode_as_string
+    type: convert_type
+    target_type: str
+    field_name_conditions:
+      - type: include_fields
+        fields:
+          - event.code
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: windows-defender

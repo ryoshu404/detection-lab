@@ -38,10 +38,45 @@ Sigma is the source format. Native EQL is permitted only for ordered-sequence de
 ## Strategy doc
 
 Every detection has `ads.md`: goal, telemetry assumptions, expected false positives, rejected alternatives, blind spots, and validation method. The validation-method section names the detonation record the rule is tested against, anchoring the doc to a reproducible attack rather than an assertion.
+git status
 
 ## Burn-in
 
-New rules deploy with `alerting: false` — active and generating detections, but non-paging — for 7-14 days. A follow-up PR flips `alerting: true` to promote. Because the SOAR path is a poller that ships everything to Tines, the `alerting` field is carried as a rule tag that Tines branches on; a burn-in rule's alerts are logged and closed, a promoted rule's create a case.
+New rules deploy with `alerting: false` — active and generating detections, but non-paging — before promotion. This is sometimes called shadow mode. A follow-up PR flips `alerting: true`.
+
+Because the SOAR path is a poller that ships everything to Tines, the `alerting` field is carried as a rule tag that Tines branches on: a burn-in rule's alerts are logged and closed, a promoted rule's create a case.
+
+### Duration
+
+Minimum 3 days, extending to 7 where the telemetry source is new or its stability is unproven.
+
+The production standard is 7–14 days, and the reason is calendar periodicity: many real false positives are weekly-shaped — patch cycles, backup jobs, business-hours login patterns — and a shorter window cannot observe them. That periodicity does not exist here. GHOSTS generates activity continuously with no weekday/weekend rhythm, so a longer window against this baseline observes no additional failure modes.
+
+The condensed window is a deliberate lab tradeoff: building experience across every stage of the lifecycle is worth more than mimicking production duration against a baseline that cannot produce the signal the duration exists to catch. Rules on newly added telemetry take the longer window, since instability and quirks in a fresh source are exactly what a short burn-in would miss.
+
+Note in each rule's ADS validation section which window was used, whether the baseline was degraded during it, and that a production deployment would warrant 7–14 days.
+
+### Promotion criteria
+
+Both must hold before a rule is promoted.
+
+**1. False-positive profile is understood.** Either the rule's FP volume is low, or the remaining FPs are predictable and sortable in the SOAR layer. Some FP sources cannot be eliminated in the rule without losing true positives; pushing those to Tines enrichment is correct rather than mangling the detection logic to chase them.
+
+The FPs observed during burn-in must match the sources the ADS doc predicted. A rule that is quiet for reasons the doc did not anticipate is not understood — it got a favourable baseline. Where observed and predicted diverge, the ADS doc is updated before promotion.
+
+**2. Detonation generality is confirmed.** The rule fires on a second, independent detonation of the same technique — a hand-rolled variant, or a different atomic exercising the same behaviour through a different tool or code path. Atomics are fixed command lines, and a rule tested only against one can be matching that invocation rather than the technique. This criterion is what catches that.
+
+For cloud rules, an alternative Stratus technique serves this purpose where one exists. Where none does, the criterion is **waived and the waiver noted in the ADS doc**: hand-rolled cloud detonations against a live account lack the isolation and rollback that make endpoint variants safe. Stratus provisions and destroys each technique's own prerequisite infrastructure, keeping detonations isolated from lab-critical resources — a hand-rolled equivalent risks touching real state with no snapshot to roll back to. This is a blast-radius decision, not a capability gap; the API calls themselves are trivial.
+
+## Detonation policy
+
+Two tiers, serving different purposes.
+
+**Primary** — Stratus Red Team (cloud) or Atomic Red Team (endpoints). Reproducible, recorded in `emulation/detonations/`, and captured as the CI fixture. This is the deterministic path that gates merges.
+
+**Secondary** — a hand-rolled variant or alternative atomic, run live against the lab during burn-in to satisfy promotion criterion 2. Not committed as a fixture; noted in the ADS doc. Keeping it out of CI preserves determinism while still testing that the rule generalizes.
+
+Snapshot the endpoint before hand-rolled detonations. Custom attacks can leave residue that an atomic's `-Cleanup` would have handled, and the VM snapshot is the undo.
 
 ## Related trees
 

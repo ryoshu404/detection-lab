@@ -1,7 +1,10 @@
 # Deploys rules to the lab SIEM on merge to main. Runs on the self-hosted runner
-# inside the lab network, which holds the Elastic key. Triggers only on push to
-# main, never on pull_request. That, plus the fork-approval repo setting, keeps
-# untrusted pull requests off the runner.
+# inside the lab network, which holds the Elastic key — so it triggers ONLY on
+# push to main, never on pull_request. That, plus the fork-approval repo setting,
+# keeps untrusted pull requests off the runner.
+#
+# Uses builder's own Python 3.11 rather than actions/setup-python, which expects
+# a GitHub-hosted image's cache that a self-hosted runner doesn't have.
 name: deploy
 
 on:
@@ -19,13 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
       - name: Install toolchain
         run: |
-          python -m venv .venv
+          python3 -m venv .venv
           . .venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements-pipeline.txt

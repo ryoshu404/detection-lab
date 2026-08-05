@@ -1,0 +1,44 @@
+# Deploys rules to the lab SIEM on merge to main. Runs on the self-hosted runner
+# inside the lab network, which holds the Elastic key. Triggers only on push to
+# main, never on pull_request. That, plus the fork-approval repo setting, keeps
+# untrusted pull requests off the runner.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ["detections/**", "pipelines/**", "deploy/**", "requirements-pipeline.txt"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, deploy]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install toolchain
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements-pipeline.txt
+
+      - name: Validate
+        run: |
+          . .venv/bin/activate
+          python deploy/validate.py detections/ --repo-root .
+
+      - name: Deploy to SIEM
+        env:
+          KIBANA_URL: ${{ secrets.KIBANA_URL }}
+          KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+        run: |
+          . .venv/bin/activate
+          python deploy/push.py detections/ -p pipelines/lab-ecs.yml

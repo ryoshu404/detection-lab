@@ -459,3 +459,27 @@ TCC: some techniques require the shell (or its parent) to hold Full Disk Access,
 ## Detonation records
 
 Every detonation is logged in `emulation/detonations/` with its technique, UTC timestamp, executing host and principal, and the artifacts it produced. Those timestamps are the ground-truth labels for rule tests — the record of what was caused, when, so a later "the rule fired" can be checked against "the rule fired on the event I know I caused." Format and rationale are in `emulation/README.md`.
+
+# GitHub Actions self-hosted runner (builder)
+
+`deploy.yml` runs on a self-hosted runner on `builder`, because deploying rules
+means reaching the Detection Engine on the elastic guest, which is only routable
+from inside the lab network. GitHub-hosted runners can't reach it; `ci.yml` runs
+there instead, since it needs no lab access.
+
+Configuration state:
+
+- Runner agent in `/opt/actions-runner`, registered to the repo (not the org).
+- Runs as a dedicated unprivileged `github-runner` user, never root — a compromised job is contained to that user's workspace.
+- Installed as a systemd service (`actions.runner.*`), so it survives reboots.
+- Labels `self-hosted,deploy,lab`; `deploy.yml` targets `runs-on: [self-hosted, deploy]` so only this runner deploys.
+Why it's locked down this way — the repo is public, so without care a fork's
+pull request could run code on a runner inside the network. The boundary is
+three-layered:
+
+- `deploy.yml` triggers only on push to main, never on `pull_request`, so a PR never reaches this runner.
+- Repo Actions setting requires approval for all external contributors' workflow runs.
+- The runner is unprivileged, so even a job that did run couldn't take the host.
+Credentials: the Detection Engine key is a scoped Kibana API key (Security /
+detection-rule management only, not superuser), stored as a GitHub Actions
+secret, injected only into the deploy step. Never in the repo.

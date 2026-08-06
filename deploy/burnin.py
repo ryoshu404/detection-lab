@@ -1,13 +1,19 @@
-"""Inject burn-in state into compiled Detection Engine rules.
+"""Inject burn-in state and ownership into compiled Detection Engine rules.
 
 The Detection Engine has no "run but don't page" mode, so the lab models it as
-a tag Tines branches on: enabled is always true (the rule runs and generates
-detections), and an alerting:false (burn-in) or alerting:true (promoted) tag
-decides whether a firing becomes a case.
+a tag the SOAR layer branches on: enabled is always true (the rule runs and
+generates detections), and an alerting:false (burn-in) or alerting:true
+(promoted) tag decides whether a firing becomes a case.
 
-The Sigma rule declares `alerting` as a custom field. It's read from the raw
-YAML because pySigma drops fields it doesn't model. Absent = false, so a new
-rule is in burn-in by default.
+Every rule the pipeline deploys also gets a managed-by:detection-lab tag. That
+ownership marker is what lets retire.py safely reconcile as rules the pipeline
+never deployed don't carry it and are never candidates for deletion. The tag is
+injected here rather than declared in the Sigma rule because it's a fact about
+how the rule was deployed, not a property of the rule, and because pySigma
+normalizes Sigma tags in ways that would mangle a key:value string.
+
+The Sigma rule declares `alerting` as a custom field, read from the raw YAML
+because pySigma drops fields it doesn't model. Absent = false (burn-in default).
 """
 
 from __future__ import annotations
@@ -16,6 +22,7 @@ import yaml
 from pathlib import Path
 
 ALERTING_TAG_PREFIX = "alerting:"
+MANAGED_TAG = "managed-by:detection-lab"
 
 
 def read_alerting_state(rule_path: Path) -> dict[str, bool]:
@@ -31,8 +38,10 @@ def read_alerting_state(rule_path: Path) -> dict[str, bool]:
 
 
 def inject_alerting_tag(ndjson_rule: dict, alerting: bool) -> dict:
-    tags = [t for t in ndjson_rule.get("tags", []) if not t.startswith(ALERTING_TAG_PREFIX)]
+    tags = [t for t in ndjson_rule.get("tags", [])
+            if not t.startswith(ALERTING_TAG_PREFIX) and t != MANAGED_TAG]
     tags.append(f"{ALERTING_TAG_PREFIX}{'true' if alerting else 'false'}")
+    tags.append(MANAGED_TAG)
     ndjson_rule["tags"] = tags
     ndjson_rule["enabled"] = True
     return ndjson_rule

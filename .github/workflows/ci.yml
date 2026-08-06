@@ -4,8 +4,6 @@ name: ci
 
 on:
   pull_request:
-  push:
-    branches: [main]
 
 permissions:
   contents: read
@@ -27,7 +25,7 @@ jobs:
 
       - name: Validate
         run: python deploy/validate.py detections/ --repo-root .
-
+        
       - name: Compile
         run: python deploy/compile.py detections/ -p pipelines/lab-ecs.yml -f default
 

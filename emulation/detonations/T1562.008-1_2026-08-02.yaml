@@ -1,0 +1,22 @@
+technique: aws.defense-evasion.cloudtrail-stop
+attack_id: T1562.008
+name: Disable Cloud Logs (CloudTrail StopLogging)
+tool: stratus
+platform: aws
+host: stratus (C:\Tools\stratus on the W11 mini)
+principal: detection-lab CLI profile
+start: 2026-08-02T02:13:53Z
+end: 2026-08-02T02:14:05Z
+telemetry:
+  - logs-aws.cloudtrail
+artifacts:
+  - none
+notes: >
+  Stratus warm-up provisions the technique's own throwaway trail
+  (stratus-red-team-ct-stop-trail-azzyjwhetk) via Terraform, then calls
+  StopLogging on it — the lab's own telemetry is never touched. The
+  ground-truth event is StopLogging on that trail, indexed at
+  2026-08-02T02:14:05Z (account 948360714652, us-east-1). Cleanup at
+  2026-08-02T03:04:44Z restarts the trail and destroys the prerequisites.
+  Stratus console timestamps are local (CDT); the UTC window above is taken
+  from the CloudTrail event, which is authoritative.

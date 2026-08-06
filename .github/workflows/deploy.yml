@@ -1,7 +1,7 @@
-# Deploys rules to the lab SIEM on merge to main. Runs on the self-hosted runner
-# inside the lab network, which holds the Elastic key — so it triggers ONLY on
-# push to main, never on pull_request. That, plus the fork-approval repo setting,
-# keeps untrusted pull requests off the runner.
+# Deploys rules to the lab SIEM on merge to main, and reconciles retirements.
+# Runs on the self-hosted runner inside the lab network, which holds the Elastic
+# key. Triggers only on push to main, never on pull_request. That, plus the
+# fork-approval repo setting, keeps untrusted pull requests off the runner.
 #
 # Uses builder's own Python 3.11 rather than actions/setup-python, which expects
 # a GitHub-hosted image's cache that a self-hosted runner doesn't have.
@@ -41,3 +41,13 @@ jobs:
         run: |
           . .venv/bin/activate
           python deploy/push.py detections/ -p pipelines/lab-ecs.yml
+
+      # Runs after push: removes managed rules whose source files are gone.
+      # Safe because it only ever deletes rules tagged managed-by:detection-lab.
+      - name: Reconcile retired rules
+        env:
+          KIBANA_URL: ${{ secrets.KIBANA_URL }}
+          KIBANA_API_KEY: ${{ secrets.KIBANA_API_KEY }}
+        run: |
+          . .venv/bin/activate
+          python deploy/retire.py detections/

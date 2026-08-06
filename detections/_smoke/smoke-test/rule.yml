@@ -1,6 +1,7 @@
 title: Smoke Test Defender Event
 id: 274f7f78-bae3-4271-a31e-2b4b6a9e34da
 status: experimental
+alerting: false
 description: Throwaway rule for validating the deploy pipeline end to end. Delete after.
 logsource:
     product: windows

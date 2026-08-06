@@ -12,3 +12,4 @@ detection:
     condition: selection
 tags:
     - lab.smoke_test
+

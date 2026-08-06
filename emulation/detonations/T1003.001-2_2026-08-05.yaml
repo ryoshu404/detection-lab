@@ -1,0 +1,30 @@
+technique: T1003.001-2
+attack_id: T1003.001
+name: LSASS Memory Dump via comsvcs.dll MiniDump
+tool: atomic
+platform: windows
+host: win-endpoint
+principal: Administrator
+start: 2026-08-05T07:03:13Z
+end: 2026-08-05T07:15:21Z
+telemetry:
+  - logs-windows.windows_defender
+artifacts:
+  - none
+notes: >
+  rundll32 comsvcs.dll MiniDump against lsass, run twice (07:03:13Z and
+  07:15:21Z). Both blocked by Defender at execution, before any handle to LSASS
+  opened — so NO Sysmon Event 10 (ProcessAccess) was produced. Attempting to
+  disable real-time protection did not help: Tamper Protection is on
+  (Set-MpPreference reverts) and RunAsPPL=2 (LSA protection) blocks user-mode
+  LSASS access outright. The technique surfaced only as Defender events:
+  1116 (detection) and 1117 (action taken), correlated by a shared Detection ID.
+
+  Threat name observed was the generic Trojan:Win32/RundllLolBin.AF, NOT an
+  LSASS-specific behavioral name — a key finding for the detection: the block
+  is real and reliable, but Defender's threat name is not a durable
+  LSASS-specific signal here. This detonation grounds the credential-access
+  Defender-block rule (keys on 1116 + LSASS-indicative fields), and its blind
+  spots motivate the sibling Sysmon-CallTrace rule (for the evasion case) and
+  the SACL-4656 rule (the durable handle-open signal, requires enabling
+  object-access auditing).

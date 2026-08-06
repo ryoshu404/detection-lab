@@ -4,10 +4,8 @@ name: ci
 
 on:
   pull_request:
-    paths: ["detections/**", "pipelines/**", "deploy/**", "requirements-pipeline.txt"]
   push:
     branches: [main]
-    paths: ["detections/**", "pipelines/**", "deploy/**", "requirements-pipeline.txt"]
 
 permissions:
   contents: read

@@ -1,0 +1,24 @@
+technique: T1686-1
+attack_id: T1686.003
+name: Disable Microsoft Defender Firewall (netsh)
+tool: atomic
+platform: windows
+host: win-endpoint
+principal: Administrator
+start: 2026-08-06T06:33:12Z
+end: 2026-08-06T06:33:14Z
+telemetry:
+  - logs-windows.sysmon_operational
+artifacts:
+  - none
+notes: >
+  netsh advfirewall set currentprofile state off, run via
+  cmd.exe /c under an interactive PowerShell session. currentprofile
+  resolved to StandardProfile, so the registry write landed on
+  ...\FirewallPolicy\StandardProfile\EnableFirewall = 0 (Sysmon EID 13).
+  The write is attributed to svchost.exe (LOCAL SERVICE) rather than the
+  netsh process, because netsh calls into the Windows Firewall service
+  which persists the value. Cleaned up with -Cleanup; firewall re-enabled
+  and verified. Grounds the defense-impairment rule
+  detections/defense-impairment/windows/firewall-disable and is captured
+  as the CI fixture tests/fixtures/T1686.003-1_2026-08-06/.

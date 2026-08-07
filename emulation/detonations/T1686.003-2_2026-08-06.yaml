@@ -1,0 +1,22 @@
+technique: T1686-2
+attack_id: T1686.003
+name: Disable Microsoft Defender Firewall via Registry
+tool: atomic
+platform: windows
+host: win-endpoint
+principal: Administrator
+start: 2026-08-06T06:33:14Z
+end: 2026-08-06T06:33:14Z
+telemetry:
+  - logs-windows.sysmon_operational
+artifacts:
+  - none
+notes: >
+  reg add on ...\FirewallPolicy\PublicProfile\EnableFirewall /d 0, run via
+  cmd.exe /c reg.exe. Unlike the netsh method, the registry write is
+  attributed directly to reg.exe rather than svchost.exe, because the key
+  is written directly rather than through the firewall service. Same
+  durable signal (EnableFirewall = 0, Sysmon EID 13), different profile
+  and different writing process. Serves as the second, independent method
+  for promotion criterion 2. Cleaned up with -Cleanup; firewall re-enabled
+  and verified. Not committed as a fixture — run live during burn-in.

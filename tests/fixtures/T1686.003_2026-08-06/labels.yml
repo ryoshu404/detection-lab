@@ -1,0 +1,6 @@
+rule: defense-impairment/windows/firewall-disable
+datasets:
+  - file: events.ndjson
+    attack_event_ids:
+      - AZ_Vxmg02m-usofLU7y-   # StandardProfile, netsh (T1686-1)
+      - AZ_Vxmg02m-usofLU7z5   # PublicProfile, reg add (T1686-2)

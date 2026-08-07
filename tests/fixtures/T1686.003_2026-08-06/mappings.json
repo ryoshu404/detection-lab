@@ -1,0 +1,1894 @@
+{
+  ".ds-logs-windows.sysmon_operational-default-2026.08.01-000001": {
+    "mappings": {
+      "_meta": {
+        "managed_by": "LAB-HOST",
+        "managed": true,
+        "package": {
+          "name": "windows"
+        }
+      },
+      "_data_stream_timestamp": {
+        "enabled": true
+      },
+      "dynamic_templates": [
+        {
+          "container.labels": {
+            "path_match": "container.labels.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "winlog.event_data": {
+            "path_match": "winlog.event_data.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "winlog.user_data": {
+            "path_match": "winlog.user_data.*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "ecs_timestamp": {
+            "match": "@timestamp",
+            "mapping": {
+              "ignore_malformed": false,
+              "type": "date"
+            }
+          }
+        },
+        {
+          "ecs_message_match_only_text": {
+            "path_match": [
+              "message",
+              "*.message"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "type": "match_only_text"
+            }
+          }
+        },
+        {
+          "ecs_non_indexed_keyword": {
+            "path_match": [
+              "*event.original",
+              "*gen_ai.agent.description"
+            ],
+            "mapping": {
+              "doc_values": false,
+              "index": false,
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "ecs_non_indexed_long": {
+            "path_match": "*.x509.public_key_exponent",
+            "mapping": {
+              "doc_values": false,
+              "index": false,
+              "type": "long"
+            }
+          }
+        },
+        {
+          "ecs_ip": {
+            "path_match": [
+              "ip",
+              "*.ip",
+              "*_ip"
+            ],
+            "match_mapping_type": "string",
+            "mapping": {
+              "type": "ip"
+            }
+          }
+        },
+        {
+          "ecs_wildcard": {
+            "path_match": [
+              "*.io.text",
+              "*.message_id",
+              "*registry.data.strings",
+              "*url.path"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "type": "wildcard"
+            }
+          }
+        },
+        {
+          "ecs_path_match_wildcard_and_match_only_text": {
+            "path_match": [
+              "*.body.content",
+              "*url.full",
+              "*url.original"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              },
+              "type": "wildcard"
+            }
+          }
+        },
+        {
+          "ecs_match_wildcard_and_match_only_text": {
+            "match": [
+              "*command_line",
+              "*stack_trace"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              },
+              "type": "wildcard"
+            }
+          }
+        },
+        {
+          "ecs_path_match_keyword_and_match_only_text": {
+            "path_match": [
+              "*.title",
+              "*.executable",
+              "*.name",
+              "*.working_directory",
+              "*.full_name",
+              "*.display_name",
+              "*file.path",
+              "*file.target_path",
+              "*os.full",
+              "*email.subject",
+              "*vulnerability.description",
+              "*user_agent.original"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              },
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "ecs_date": {
+            "path_match": [
+              "*.timestamp",
+              "*_timestamp",
+              "*.not_after",
+              "*.not_before",
+              "*.accessed",
+              "created",
+              "*.created",
+              "*.installed",
+              "*.creation_date",
+              "*.ctime",
+              "*.mtime",
+              "ingested",
+              "*.ingested",
+              "*.start",
+              "*.end",
+              "*.indicator.first_seen",
+              "*.indicator.last_seen",
+              "*.indicator.modified_at",
+              "*threat.enrichments.matched.occurred"
+            ],
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "type": "date"
+            }
+          }
+        },
+        {
+          "ecs_path_match_float": {
+            "path_match": [
+              "*.score.*",
+              "*_score*"
+            ],
+            "path_unmatch": "*.version",
+            "unmatch_mapping_type": "object",
+            "mapping": {
+              "type": "float"
+            }
+          }
+        },
+        {
+          "ecs_usage_double_scaled_float": {
+            "path_match": "*.usage",
+            "match_mapping_type": [
+              "double",
+              "long",
+              "string"
+            ],
+            "mapping": {
+              "scaling_factor": 1000,
+              "type": "scaled_float"
+            }
+          }
+        },
+        {
+          "ecs_geo_point": {
+            "path_match": "*.geo.location",
+            "mapping": {
+              "type": "geo_point"
+            }
+          }
+        },
+        {
+          "ecs_flattened": {
+            "path_match": [
+              "*structured_data",
+              "*exports",
+              "*imports"
+            ],
+            "match_mapping_type": "object",
+            "mapping": {
+              "type": "flattened"
+            }
+          }
+        },
+        {
+          "ecs_gen_ai_integers": {
+            "path_match": [
+              "*gen_ai.request.max_tokens",
+              "*gen_ai.usage.input_tokens",
+              "*gen_ai.usage.output_tokens",
+              "*gen_ai.request.choice.count",
+              "*gen_ai.request.seed"
+            ],
+            "mapping": {
+              "type": "integer"
+            }
+          }
+        },
+        {
+          "ecs_gen_ai_doubles": {
+            "path_match": [
+              "*gen_ai.request.temperature",
+              "*gen_ai.request.top_k",
+              "*gen_ai.request.frequency_penalty",
+              "*gen_ai.request.presence_penalty",
+              "*gen_ai.request.top_p"
+            ],
+            "mapping": {
+              "type": "double"
+            }
+          }
+        },
+        {
+          "all_strings_to_keywords": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        },
+        {
+          "strings_as_keyword": {
+            "match_mapping_type": "string",
+            "mapping": {
+              "ignore_above": 1024,
+              "type": "keyword"
+            }
+          }
+        }
+      ],
+      "date_detection": false,
+      "properties": {
+        "@timestamp": {
+          "type": "date",
+          "ignore_malformed": false
+        },
+        "agent": {
+          "properties": {
+            "ephemeral_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "name": {
+              "type": "keyword",
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "version": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "cloud": {
+          "properties": {
+            "account": {
+              "properties": {
+                "id": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "availability_zone": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "image": {
+              "properties": {
+                "id": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "instance": {
+              "properties": {
+                "id": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "machine": {
+              "properties": {
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "project": {
+              "properties": {
+                "id": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "provider": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "region": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "container": {
+          "dynamic": "true",
+          "properties": {
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "image": {
+              "properties": {
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "labels": {
+              "type": "object",
+              "dynamic": "true"
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "data_stream": {
+          "properties": {
+            "dataset": {
+              "type": "constant_keyword",
+              "value": "windows.sysmon_operational"
+            },
+            "namespace": {
+              "type": "constant_keyword",
+              "value": "default"
+            },
+            "type": {
+              "type": "constant_keyword",
+              "value": "logs"
+            }
+          }
+        },
+        "dataset": {
+          "properties": {
+            "name": {
+              "type": "constant_keyword"
+            },
+            "namespace": {
+              "type": "constant_keyword"
+            },
+            "type": {
+              "type": "constant_keyword"
+            }
+          }
+        },
+        "destination": {
+          "properties": {
+            "domain": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "ip": {
+              "type": "ip"
+            },
+            "port": {
+              "type": "long"
+            }
+          }
+        },
+        "dll": {
+          "properties": {
+            "code_signature": {
+              "properties": {
+                "status": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "subject_name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "trusted": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "hash": {
+              "properties": {
+                "md5": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha1": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha256": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "name": {
+              "type": "keyword",
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "path": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "pe": {
+              "properties": {
+                "imphash": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "original_file_name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            }
+          }
+        },
+        "dns": {
+          "properties": {
+            "answers": {
+              "properties": {
+                "class": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "data": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ttl": {
+                  "type": "long"
+                },
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "header_flags": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "op_code": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "question": {
+              "properties": {
+                "class": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "registered_domain": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "subdomain": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "top_level_domain": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "resolved_ip": {
+              "type": "ip"
+            },
+            "response_code": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "ecs": {
+          "properties": {
+            "version": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "elastic_agent": {
+          "properties": {
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "snapshot": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "error": {
+          "properties": {
+            "code": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "message": {
+              "type": "match_only_text"
+            }
+          }
+        },
+        "event": {
+          "properties": {
+            "action": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "agent_id_status": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "category": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "code": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "created": {
+              "type": "date"
+            },
+            "dataset": {
+              "type": "constant_keyword",
+              "value": "windows.sysmon_operational"
+            },
+            "ingested": {
+              "type": "date",
+              "format": "strict_date_time_no_millis||strict_date_optional_time||epoch_millis",
+              "ignore_malformed": false
+            },
+            "kind": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "module": {
+              "type": "constant_keyword",
+              "value": "windows"
+            },
+            "outcome": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "provider": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "sequence": {
+              "type": "long"
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "file": {
+          "properties": {
+            "code_signature": {
+              "properties": {
+                "exists": {
+                  "type": "boolean"
+                },
+                "status": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "subject_name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "trusted": {
+                  "type": "boolean"
+                },
+                "valid": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "directory": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "extension": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "hash": {
+              "properties": {
+                "md5": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha1": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha256": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha512": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "path": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "pe": {
+              "properties": {
+                "architecture": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "company": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "description": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "file_version": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "imphash": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "original_file_name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "product": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            }
+          }
+        },
+        "group": {
+          "properties": {
+            "domain": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "host": {
+          "properties": {
+            "architecture": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "containerized": {
+              "type": "boolean"
+            },
+            "domain": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "hostname": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "ip": {
+              "type": "ip"
+            },
+            "mac": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "os": {
+              "properties": {
+                "build": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "codename": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "family": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "kernel": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "fields": {
+                    "text": {
+                      "type": "match_only_text"
+                    }
+                  }
+                },
+                "platform": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "version": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "input": {
+          "properties": {
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "log": {
+          "properties": {
+            "level": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "message": {
+          "type": "match_only_text"
+        },
+        "network": {
+          "properties": {
+            "community_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "direction": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "protocol": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "transport": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "process": {
+          "properties": {
+            "args": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "args_count": {
+              "type": "long"
+            },
+            "command_line": {
+              "type": "wildcard",
+              "ignore_above": 1024,
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "entity_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "executable": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "caseless": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "normalizer": "lowercase"
+                },
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "hash": {
+              "properties": {
+                "md5": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha1": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha256": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "sha512": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "caseless": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "normalizer": "lowercase"
+                },
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "parent": {
+              "properties": {
+                "args": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "args_count": {
+                  "type": "long"
+                },
+                "command_line": {
+                  "type": "wildcard",
+                  "ignore_above": 1024,
+                  "fields": {
+                    "text": {
+                      "type": "match_only_text"
+                    }
+                  }
+                },
+                "entity_id": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "executable": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "fields": {
+                    "text": {
+                      "type": "match_only_text"
+                    }
+                  }
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "fields": {
+                    "text": {
+                      "type": "match_only_text"
+                    }
+                  }
+                },
+                "pid": {
+                  "type": "long"
+                }
+              }
+            },
+            "pe": {
+              "properties": {
+                "architecture": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "company": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "description": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "file_version": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "imphash": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "original_file_name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "product": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "pid": {
+              "type": "long"
+            },
+            "thread": {
+              "properties": {
+                "id": {
+                  "type": "long"
+                }
+              }
+            },
+            "title": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "working_directory": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            }
+          }
+        },
+        "registry": {
+          "properties": {
+            "data": {
+              "properties": {
+                "strings": {
+                  "type": "wildcard",
+                  "ignore_above": 1024
+                },
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "hive": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "key": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "path": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "value": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "related": {
+          "properties": {
+            "hash": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "hosts": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "ip": {
+              "type": "ip"
+            },
+            "user": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "rule": {
+          "properties": {
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "service": {
+          "properties": {
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "type": {
+              "type": "keyword",
+              "ignore_above": 1024
+            }
+          }
+        },
+        "source": {
+          "properties": {
+            "domain": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "ip": {
+              "type": "ip"
+            },
+            "port": {
+              "type": "long"
+            }
+          }
+        },
+        "sysmon": {
+          "properties": {
+            "dns": {
+              "properties": {
+                "status": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "file": {
+              "properties": {
+                "archived": {
+                  "type": "boolean"
+                },
+                "is_executable": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "tags": {
+          "type": "keyword",
+          "ignore_above": 1024
+        },
+        "user": {
+          "properties": {
+            "domain": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "name": {
+              "type": "keyword",
+              "ignore_above": 1024,
+              "fields": {
+                "text": {
+                  "type": "match_only_text"
+                }
+              }
+            },
+            "target": {
+              "properties": {
+                "group": {
+                  "properties": {
+                    "domain": {
+                      "type": "keyword",
+                      "ignore_above": 1024
+                    },
+                    "id": {
+                      "type": "keyword",
+                      "ignore_above": 1024
+                    },
+                    "name": {
+                      "type": "keyword",
+                      "ignore_above": 1024
+                    }
+                  }
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024,
+                  "fields": {
+                    "text": {
+                      "type": "match_only_text"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "winlog": {
+          "dynamic": "true",
+          "properties": {
+            "activity_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "api": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "channel": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "computer_name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "event_data": {
+              "dynamic": "true",
+              "properties": {
+                "AuthenticationPackageName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Binary": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "BitlockerUserInputTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "BootMode": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "BootType": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "BuildVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "CallTrace": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ClientInfo": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Company": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Configuration": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ConfigurationFileHash": {
+                  "type": "keyword"
+                },
+                "Contents": {
+                  "type": "keyword"
+                },
+                "CorruptionActionState": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "CreationUtcTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Description": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Details": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DeviceName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DeviceNameLength": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DeviceTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DeviceVersionMajor": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DeviceVersionMinor": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DriveName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DriverName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DriverNameLength": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "DwordVal": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "EntryCount": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "EventNamespace": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "EventType": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ExtraInfo": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "FailureName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "FailureNameLength": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "FileVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "FinalStatus": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "GrantedAccess": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Group": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "IdleImplementation": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "IdleStateCount": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ImpersonationLevel": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "IntegrityLevel": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "IpAddress": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "IpPort": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "KeyLength": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LastBootGood": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LastShutdownGood": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LmPackageName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LogonGuid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LogonId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LogonProcessName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "LogonType": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MajorVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MaximumPerformancePercent": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MemberName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MemberSid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MinimumPerformancePercent": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MinimumThrottlePercent": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "MinorVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NewProcessId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NewProcessName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NewSchemeGuid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NewThreadId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NewTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "NominalFrequency": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Number": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "OldSchemeGuid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "OldTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Operation": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "OriginalFileName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ParentUser": {
+                  "type": "keyword"
+                },
+                "Path": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PerformanceImplementation": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PreviousCreationUtcTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PreviousTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PrivilegeList": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ProcessId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ProcessName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ProcessPath": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ProcessPid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Product": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PuaCount": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "PuaPolicyId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "QfeVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Query": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Reason": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SchemaVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ScriptBlockText": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ServiceName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ServiceVersion": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Session": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ShutdownActionType": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ShutdownEventCode": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "ShutdownReason": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Signature": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SignatureStatus": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Signed": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SourceUser": {
+                  "type": "keyword"
+                },
+                "StartAddress": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "StartFunction": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "StartModule": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "StartTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "State": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Status": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "StopTime": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SubjectDomainName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SubjectLogonId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SubjectUserName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "SubjectUserSid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TSId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetDomainName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetImage": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetInfo": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetLogonGuid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetLogonId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetProcessGUID": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetProcessId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetServerName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetUser": {
+                  "type": "keyword"
+                },
+                "TargetUserName": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TargetUserSid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TerminalSessionId": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TokenElevationType": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "TransmittedServices": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "UserSid": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Version": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "Workstation": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param1": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param2": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param3": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param4": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param5": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param6": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param7": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "param8": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "event_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "keywords": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "opcode": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "process": {
+              "properties": {
+                "pid": {
+                  "type": "long"
+                },
+                "thread": {
+                  "properties": {
+                    "id": {
+                      "type": "long"
+                    }
+                  }
+                }
+              }
+            },
+            "provider_guid": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "provider_name": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "record_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "related_activity_id": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "task": {
+              "type": "keyword",
+              "ignore_above": 1024
+            },
+            "user": {
+              "properties": {
+                "domain": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "identifier": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "name": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                },
+                "type": {
+                  "type": "keyword",
+                  "ignore_above": 1024
+                }
+              }
+            },
+            "user_data": {
+              "type": "object",
+              "dynamic": "true"
+            },
+            "version": {
+              "type": "long"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -52,8 +52,8 @@ However, in most scenarios such environments would utilize Windows exclusions in
 
 This detection was validated using Atomic Red Team.
 
-- Primary: `T1686-1 Disable Microsoft Defender Firewall` (netsh) detonation [`emulation\detonations\T1686.003-1_2026-08-06.yaml`](../../../../emulation/detonations/T1686.003-1_2026-08-06.yaml), captured as the CI fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
-- Secondary: `T1686-2 Disable Microsoft Defender Firewall via Registry` (reg add) detonation [`emulation\detonations\T1686.003-2_2026-08-06.yaml`]((../../../../emulation/detonations/T1686.003-2_2026-08-06.yaml)), captured in the same fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
+- Primary: `T1686-1 Disable Microsoft Defender Firewall` (netsh) detonation [`emulation\detonations\T1686.003-1_2026-08-06.yaml`](../../../../emulation/detonations/T1686.003-1_2026-08-06.yml), captured as the CI fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
+- Secondary: `T1686-2 Disable Microsoft Defender Firewall via Registry` (reg add) detonation [`emulation\detonations\T1686.003-2_2026-08-06.yaml`]((../../../../emulation/detonations/T1686.003-2_2026-08-06.yml)), captured in the same fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
 
 The detection alerted on both, and the registry write was attributed to a different process in each (`svchost.exe` for netsh, `reg.exe` for the direct registry write), confirming the rule keys on the state change rather than the method.
 

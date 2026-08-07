@@ -6,7 +6,7 @@ This directory holds the record of what was detonated, not the tools themselves.
 
 ## Detonation records
 
-Each detonation is one YAML file under `detonations/`, named `<technique-id>_<utc-date>.yaml`. One file per detonation rather than a shared append log: fixtures and tests reference a single detonation, a per-file record diffs cleanly and sits beside the fixture it produced, and CI committing to a shared log would generate conflicts.
+Each detonation is one YAML file under `detonations/`, named `<technique-id>_<utc-date>.yml`. One file per detonation rather than a shared append log: fixtures and tests reference a single detonation, a per-file record diffs cleanly and sits beside the fixture it produced, and CI committing to a shared log would generate conflicts.
 
 The record exists to make a detonation recoverable from telemetry later. When a rule is written for a technique, its test needs to find the events that technique produced — which means knowing exactly when it ran, on which host, as which principal, and what it created. The detonation timestamp is the ground-truth label: it is the difference between "the rule fired" and "the rule fired on the event I know I caused."
 

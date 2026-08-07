@@ -3,6 +3,7 @@
 name: lab-ecs
 priority: 20
 transformations:
+  # --- Windows Defender ---
   - id: set_defender_index
     type: set_state
     key: index
@@ -33,3 +34,36 @@ transformations:
       - type: logsource
         product: windows
         service: windows-defender
+
+  # --- Sysmon ---
+  - id: set_sysmon_index
+    type: set_state
+    key: index
+    val: logs-windows.sysmon_operational-*
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: sysmon
+
+  - id: map_sysmon_fields
+    type: field_name_mapping
+    mapping:
+      EventID: event.code
+      TargetObject: registry.path
+      Details: registry.data.strings
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: sysmon
+
+  - id: sysmon_eventcode_as_string
+    type: convert_type
+    target_type: str
+    field_name_conditions:
+      - type: include_fields
+        fields:
+          - event.code
+    rule_conditions:
+      - type: logsource
+        product: windows
+        service: sysmon

@@ -1,0 +1,33 @@
+title: Windows Host Firewall Disabled
+id: 6f236fde-ad35-4d92-9f5e-e314b72bc1e2
+status: experimental
+description: >
+    Identifies the Windows host firewall being disabled via the EnableFirewall
+    registry value being set to 0 on any firewall profile. The value is set
+    regardless of method — netsh, the PowerShell cmdlet, Group Policy, and a
+    direct registry edit all converge on it.
+author: ryoshu404
+date: 2026-08-06
+references:
+    - https://attack.mitre.org/techniques/T1686/003/
+tags:
+    - attack.defense-impairment
+    - attack.t1686.003
+alerting: false
+logsource:
+    product: windows
+    service: sysmon
+detection:
+    selection:
+        EventID: 13
+        TargetObject|endswith:
+            - '\FirewallPolicy\DomainProfile\EnableFirewall'
+            - '\FirewallPolicy\StandardProfile\EnableFirewall'
+            - '\FirewallPolicy\PublicProfile\EnableFirewall'
+        Details: '0'
+    condition: selection
+level: high
+falsepositives:
+    - Firewall disabled during network troubleshooting
+    - Third-party software managing firewall state
+    - Group Policy pushing a firewall-disabled state

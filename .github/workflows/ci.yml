@@ -1,5 +1,6 @@
 # PR gate. Runs on GitHub-hosted runners with no lab access and no secrets, so
-# it's safe on untrusted pull requests. Validates and compiles every rule.
+# it's safe on untrusted pull requests. Validates, compiles, scans fixtures for
+# unscrubbed values, and set-equality tests every rule against its fixture.
 name: ci
 
 on:
@@ -11,6 +12,18 @@ permissions:
 jobs:
   validate-and-compile:
     runs-on: ubuntu-latest
+
+    # Pinned to the lab stack version so ES|QL behaviour is identical.
+    services:
+      elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:9.4.2
+        env:
+          discovery.type: single-node
+          xpack.security.enabled: "false"
+          ES_JAVA_OPTS: -Xms1g -Xmx1g
+        ports:
+          - 9200:9200
+
     steps:
       - uses: actions/checkout@v4
 
@@ -25,10 +38,12 @@ jobs:
 
       - name: Validate
         run: python deploy/validate.py detections/ --repo-root .
-        
+
       - name: Compile
         run: python deploy/compile.py detections/ -p pipelines/lab-ecs.yml -f default
 
-      # Set-equality test tier goes here once the fixture harness exists:
-      # spin up a pinned Elastic service container, load a detonation fixture,
-      # run the compiled query, assert it returns exactly the labelled events.
+      - name: Scan fixtures for unscrubbed values
+        run: python tests/scan_fixtures.py
+
+      - name: Fixture set-equality tests
+        run: pytest tests/ -v

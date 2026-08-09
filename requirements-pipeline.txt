@@ -3,3 +3,4 @@ pysigma-backend-elasticsearch==2.1.0
 pysigma-pipeline-windows==2.0.0
 requests
 pyyaml
+pytest==9.1.1

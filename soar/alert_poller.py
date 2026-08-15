@@ -1,3 +1,69 @@
+"""Poll the Elastic detection alerts index and push new alerts to a Tines webhook.
+
+One-directional: Elastic -> Tines. Tracks a last-seen timestamp plus recently-sent
+alert UUIDs so alerts that arrive slightly out of order are still caught without
+being re-sent (dedup is on the alert UUID, not the timestamp alone).
+"""
+
+import json
+import os
+import sys
+import time
+import urllib.request
+import urllib.error
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+# --- Config from environment ---
+ES_URL = os.environ["ES_URL"].rstrip("/")
+ES_API_KEY = os.environ["ES_API_KEY"]
+TINES_WEBHOOK_URL = os.environ["TINES_WEBHOOK_URL"]
+ALERTS_INDEX = os.environ.get("ALERTS_INDEX", ".alerts-security.alerts-default")
+STATE_FILE = Path(os.environ.get("STATE_FILE", "/var/lib/alert-poller/state.json"))
+# How far back to re-query each run, to catch out-of-order/late-arriving alerts.
+OVERLAP_MINUTES = int(os.environ.get("OVERLAP_MINUTES", "5"))
+# Verify TLS against the ES CA. For a lab with a self-signed cert, point this at
+# the CA file; if unset, TLS verification is skipped (lab-acceptable, not for prod).
+ES_CA_CERT = os.environ.get("ES_CA_CERT", "")
+
+import ssl
+if ES_CA_CERT:
+    SSL_CTX = ssl.create_default_context(cafile=ES_CA_CERT)
+else:
+    SSL_CTX = ssl.create_default_context()
+    SSL_CTX.check_hostname = False
+    SSL_CTX.verify_mode = ssl.CERT_NONE
+
+def _parse_iso(s):
+    # Python 3.10's fromisoformat rejects the 'Z' suffix; normalize to +00:00.
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+def log(msg):
+    print(f"{datetime.now(timezone.utc).isoformat()} {msg}", flush=True)
+
+
+def load_state():
+    try:
+        with STATE_FILE.open() as f:
+            state = json.load(f)
+            # sent_uuids kept as a list on disk, used as a set in memory
+            state["sent_uuids"] = set(state.get("sent_uuids", []))
+            return state
+    except (FileNotFoundError, json.JSONDecodeError):
+        # First run: start from now minus the overlap window.
+        start = datetime.now(timezone.utc) - timedelta(minutes=OVERLAP_MINUTES)
+        return {"last_seen": start.isoformat(), "sent_uuids": set()}
+
+
+def save_state(state):
+    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    out = {"last_seen": state["last_seen"], "sent_uuids": sorted(state["sent_uuids"])}
+    tmp = STATE_FILE.with_suffix(".tmp")
+    with tmp.open("w") as f:
+        json.dump(out, f)
+    tmp.replace(STATE_FILE)  # atomic
+
+
 def query_alerts(since_iso):
     """Fetch alerts with @timestamp >= (since - overlap), newest handling by caller."""
     window_start = (

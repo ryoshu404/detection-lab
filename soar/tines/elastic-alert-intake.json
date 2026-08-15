@@ -1,0 +1,223 @@
+{
+  "schema_version": 30,
+  "standard_lib_version": 94,
+  "action_runtime_version": 86,
+  "name": "Elastic Alert Intake",
+  "description": null,
+  "guid": "59e0dc7afee5d969ff6ca2864368b32e",
+  "slug": "elastic_alert_intake",
+  "agents": [
+    {
+      "type": "Agents::WebhookAgent",
+      "name": "Elastic Alert Intake",
+      "disabled": false,
+      "description": null,
+      "guid": "3388bb521856b3cbf6db576cf7b26f07",
+      "origin_story_identifier": "cloud:REDACTED:REDACTED",
+      "options": {
+        "path": "REDACTED",
+        "secret": "REDACTED",
+        "verbs": "get,post"
+      },
+      "reporting": {
+        "time_saved_value": 0,
+        "time_saved_unit": "minutes"
+      },
+      "monitoring": {
+        "monitor_all_events": false,
+        "monitor_failures": false,
+        "monitor_no_events_emitted": null
+      },
+      "template": {
+        "created_from_template_guid": null,
+        "created_from_template_version": null,
+        "template_tags": []
+      },
+      "width": null
+    },
+    {
+      "type": "Agents::TriggerAgent",
+      "name": "Is Promoted",
+      "disabled": false,
+      "description": null,
+      "guid": "c2fcf3de9614fad6e62fb34f40d2cfdb",
+      "origin_story_identifier": "cloud:REDACTED:REDACTED",
+      "options": {
+        "rules": [
+          {
+            "path": "=INCLUDES(elastic_alert_intake.body[\"kibana.alert.rule.tags\"], \"alerting:true\")",
+            "type": "formula"
+          }
+        ]
+      },
+      "reporting": {
+        "time_saved_value": 0,
+        "time_saved_unit": "minutes"
+      },
+      "monitoring": {
+        "monitor_all_events": false,
+        "monitor_failures": false,
+        "monitor_no_events_emitted": null
+      },
+      "template": {
+        "created_from_template_guid": null,
+        "created_from_template_version": null,
+        "template_tags": []
+      },
+      "width": null
+    },
+    {
+      "type": "Agents::TriggerAgent",
+      "name": "Is Burn-in",
+      "disabled": false,
+      "description": null,
+      "guid": "79dc03dca9367fe71487ea04e8301327",
+      "origin_story_identifier": "cloud:REDACTED:REDACTED",
+      "options": {
+        "rules": [
+          {
+            "path": "=INCLUDES(elastic_alert_intake.body[\"kibana.alert.rule.tags\"], \"alerting:false\")",
+            "type": "formula"
+          }
+        ]
+      },
+      "reporting": {
+        "time_saved_value": 0,
+        "time_saved_unit": "minutes"
+      },
+      "monitoring": {
+        "monitor_all_events": false,
+        "monitor_failures": false,
+        "monitor_no_events_emitted": null
+      },
+      "template": {
+        "created_from_template_guid": null,
+        "created_from_template_version": null,
+        "template_tags": []
+      },
+      "width": null
+    },
+    {
+      "type": "Agents::EmailAgent",
+      "name": "Send Email",
+      "disabled": false,
+      "description": null,
+      "guid": "2703e4696ea681f2a46c607180737878",
+      "origin_story_identifier": "cloud:REDACTED:REDACTED",
+      "options": {
+        "recipients": [],
+        "reply_to": "",
+        "sender_name": "NAME",
+        "subject": "[BURN-IN] <<elastic_alert_intake.body['kibana.alert.rule.name']>> (logged, no case)",
+        "body": "<p>A burn-in detection fired. Logged for FP analysis; no case created.</p>\n<p>Rule:<<elastic_alert_intake.body['kibana.alert.rule.name']>></p>\n<p>Host:<<elastic_alert_intake.body['host.name']>></p>\r\n<p>Time:<<elastic_alert_intake.body['@timestamp']>>\n</p>\r\n<p>Alert UUID:<<elastic_alert_intake.body['kibana.alert.uuid']>></p>",
+        "advanced_html": true,
+        "cc": [],
+        "bcc": [],
+        "sender_address": ""
+      },
+      "reporting": {
+        "time_saved_value": 0,
+        "time_saved_unit": "minutes"
+      },
+      "monitoring": {
+        "monitor_all_events": false,
+        "monitor_failures": false,
+        "monitor_no_events_emitted": null
+      },
+      "template": {
+        "created_from_template_guid": null,
+        "created_from_template_version": null,
+        "template_tags": []
+      },
+      "width": null,
+      "schedule": null
+    },
+    {
+      "type": "Agents::EmailAgent",
+      "name": "Send Email",
+      "disabled": false,
+      "description": null,
+      "guid": "5c916da0236766756a10010a2651f51f",
+      "origin_story_identifier": "cloud:REDACTED:REDACTED",
+      "options": {
+        "recipients": [],
+        "reply_to": "",
+        "sender_name": "NAME",
+        "subject": "[CASE OPENED] <<elastic_alert_intake.body['kibana.alert.rule.name']>> on <<elastic_alert_intake.body['host.name']>>",
+        "body": "<p>A promoted detection fired and would open a case.</p>\r\n<p>Rule: <<elastic_alert_intake.body['kibana.alert.rule.name']>></p>\r\n<p>Severity: <<elastic_alert_intake.body['kibana.alert.severity']>></p>\r\n<p>Host: <<elastic_alert_intake.body['host.name']>></p>\r\n<p>Time: <<elastic_alert_intake.body['@timestamp']>></p>\r\n<p>Reason: <<elastic_alert_intake.body['kibana.alert.reason']>></p>\r\n<p>Alert UUID: <<elastic_alert_intake.body['kibana.alert.uuid']>></p>",
+        "advanced_html": true,
+        "cc": [],
+        "bcc": [],
+        "sender_address": ""
+      },
+      "reporting": {
+        "time_saved_value": 0,
+        "time_saved_unit": "minutes"
+      },
+      "monitoring": {
+        "monitor_all_events": false,
+        "monitor_failures": false,
+        "monitor_no_events_emitted": null
+      },
+      "template": {
+        "created_from_template_guid": null,
+        "created_from_template_version": null,
+        "template_tags": []
+      },
+      "width": null,
+      "schedule": null
+    }
+  ],
+  "diagram_notes": [],
+  "links": [
+    {
+      "source": 0,
+      "receiver": 1
+    },
+    {
+      "source": 0,
+      "receiver": 2
+    },
+    {
+      "source": 1,
+      "receiver": 4
+    },
+    {
+      "source": 2,
+      "receiver": 3
+    }
+  ],
+  "diagram_layout": "{\"2703e4696ea681f2a46c607180737878\":[825,630],\"3388bb521856b3cbf6db576cf7b26f07\":[585,285],\"5c916da0236766756a10010a2651f51f\":[300,630],\"79dc03dca9367fe71487ea04e8301327\":[735,465],\"c2fcf3de9614fad6e62fb34f40d2cfdb\":[435,465]}",
+  "story_library_metadata": {},
+  "monitor_failures": false,
+  "synchronous_webhooks_enabled": false,
+  "integrations": [],
+  "sections": [],
+  "parent_only_send_to_story": false,
+  "send_to_story_timeout_enabled": false,
+  "send_to_story_timeout_duration_seconds": null,
+  "keep_events_for": 86400,
+  "reporting_status": true,
+  "send_to_story_enabled": false,
+  "entry_agent_guid": null,
+  "exit_agent_guids": [],
+  "api_entry_action_guids": [],
+  "api_exit_action_guids": [],
+  "send_to_story_access": null,
+  "send_to_story_access_source": 0,
+  "send_to_story_skill_use_requires_confirmation": true,
+  "pages": [],
+  "tags": [],
+  "time_saved_unit": "minutes",
+  "time_saved_value": 0,
+  "origin_story_identifier": "cloud:REDACTED:REDACTED",
+  "recipients": [],
+  "integration_product": null,
+  "integration_vendor": null,
+  "llm_product_instructions": "",
+  "start_reference": null,
+  "app_endpoints": [],
+  "send_to_stories": [],
+  "exported_at": "2026-08-15T21:34:39Z",
+  "icon": ":pencil2:"
+}

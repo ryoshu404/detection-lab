@@ -13,7 +13,7 @@ references:
 tags:
     - attack.defense-impairment
     - attack.t1686.003
-alerting: false
+alerting: true
 logsource:
     product: windows
     service: sysmon

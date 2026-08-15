@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Poll the Elastic detection alerts index and push new alerts to a Tines webhook.
 
 One-directional: Elastic -> Tines. Tracks a last-seen timestamp plus recently-sent

@@ -24,7 +24,7 @@ STATE_FILE = Path(os.environ.get("STATE_FILE", "/var/lib/alert-poller/state.json
 # How far back to re-query each run, to catch out-of-order/late-arriving alerts.
 OVERLAP_MINUTES = int(os.environ.get("OVERLAP_MINUTES", "5"))
 # Verify TLS against the ES CA. For a lab with a self-signed cert, point this at
-# the CA file; if unset, TLS verification is skipped.
+# the CA file; if unset, TLS verification is skipped (lab-acceptable, not for prod).
 ES_CA_CERT = os.environ.get("ES_CA_CERT", "")
 
 import ssl
@@ -35,6 +35,9 @@ else:
     SSL_CTX.check_hostname = False
     SSL_CTX.verify_mode = ssl.CERT_NONE
 
+def _parse_iso(s):
+    # Python 3.10's fromisoformat rejects the 'Z' suffix; normalize to +00:00.
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
 
 def log(msg):
     print(f"{datetime.now(timezone.utc).isoformat()} {msg}", flush=True)
@@ -44,6 +47,7 @@ def load_state():
     try:
         with STATE_FILE.open() as f:
             state = json.load(f)
+            # sent_uuids kept as a list on disk, used as a set in memory
             state["sent_uuids"] = set(state.get("sent_uuids", []))
             return state
     except (FileNotFoundError, json.JSONDecodeError):
@@ -58,13 +62,13 @@ def save_state(state):
     tmp = STATE_FILE.with_suffix(".tmp")
     with tmp.open("w") as f:
         json.dump(out, f)
-    tmp.replace(STATE_FILE)
+    tmp.replace(STATE_FILE)  # atomic
 
 
 def query_alerts(since_iso):
     """Fetch alerts with @timestamp >= (since - overlap), newest handling by caller."""
     window_start = (
-        datetime.fromisoformat(since_iso) - timedelta(minutes=OVERLAP_MINUTES)
+        _parse_iso(since_iso) - timedelta(minutes=OVERLAP_MINUTES)
     ).isoformat()
     body = {
         "size": 500,
@@ -103,6 +107,7 @@ def post_to_tines(alert_source):
 
 
 def alert_uuid(hit):
+    # Prefer the alert's own UUID; fall back to the ES _id.
     return hit["_source"].get("kibana.alert.uuid") or hit.get("_id")
 
 
@@ -110,6 +115,8 @@ def prune_uuids(state):
     """Keep sent_uuids from growing unbounded: drop UUIDs older than the overlap
     window is hard without per-uuid timestamps, so cap the set size instead."""
     if len(state["sent_uuids"]) > 5000:
+        # Keep it bounded; oldest-tracking isn't needed because dedup only matters
+        # within the overlap window. A large cap is plenty for lab volume.
         state["sent_uuids"] = set(list(state["sent_uuids"])[-5000:])
 
 
@@ -129,11 +136,12 @@ def run_once():
     for hit in hits:
         uid = alert_uuid(hit)
         if uid in state["sent_uuids"]:
-            continue
+            continue  # already pushed
         try:
             status = post_to_tines(hit["_source"])
         except Exception as e:
             log(f"ERROR posting alert {uid} to Tines: {e}")
+            # Don't mark as sent; retry next run.
             continue
         if 200 <= status < 300:
             state["sent_uuids"].add(uid)

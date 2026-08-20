@@ -53,8 +53,6 @@ The production standard is 7–14 days, and the reason is calendar periodicity: 
 
 The condensed window is a deliberate lab tradeoff: building experience across every stage of the lifecycle is worth more than mimicking production duration against a baseline that cannot produce the signal the duration exists to catch. Rules on newly added telemetry take the longer window, since instability and quirks in a fresh source are exactly what a short burn-in would miss.
 
-Note in each rule's ADS validation section which window was used, whether the baseline was degraded during it, and that a production deployment would warrant 7–14 days.
-
 ### Promotion criteria
 
 Both must hold before a rule is promoted.

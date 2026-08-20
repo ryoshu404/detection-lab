@@ -35,9 +35,9 @@ The detection will work as follows:
 
 This detection relies on Sysmon being enabled and the configuration in use logging EID 13.
 
-It was decided to filter only on the registry value being `0`, so a possible blind spot is missing the clean-up of this activity, which would set the value back to `1`, but it was decided to scope on `0` onlsince restoring the firewall isn;t the attack or the technique itself. Detections for an attacker disabling logging beforehand, the case that would blind this rule entirely, are covered separately by planned defense-impairment detections (Sysmon driver unload, ETW provider disable), not yet authored.
+It was decided to filter only on the registry value being `0`, so a possible blind spot is missing the clean-up of this activity, which would set the value back to `1`, but it was decided to scope on `0` only since restoring the firewall isn't the attack or the technique itself. Detections for an attacker disabling logging beforehand, the case that would blind this rule entirely, are covered separately by planned defense-impairment detections (Sysmon driver unload, ETW provider disable), not yet authored.
 
-The registry write is attributed to different processes depending on method: `svchost.exe` when driven through the firewall service (e.g. netsh), and `reg.exe` when the key is written directly. The actor is therefore not reliable from this event alone, and process context is treated as a SOAR-enrichment concern rather than in-rule logic.
+The registry write is attributed to different processes depending on method: `svchost.exe` when driven through the firewall service (e.g. netsh), and `reg.exe` when the key is written directly. The actor is therefore not reliable from this event alone, so the rule keys on the state change rather than the process.
 
 ## False positives
 
@@ -52,8 +52,8 @@ However, in most scenarios such environments would utilize Windows exclusions in
 
 This detection was validated using Atomic Red Team.
 
-- Primary: `T1686-1 Disable Microsoft Defender Firewall` (netsh) detonation [`emulation\detonations\T1686.003-1_2026-08-06.yaml`](../../../../emulation/detonations/T1686.003-1_2026-08-06.yml), captured as the CI fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
-- Secondary: `T1686-2 Disable Microsoft Defender Firewall via Registry` (reg add) detonation [`emulation\detonations\T1686.003-2_2026-08-06.yaml`]((../../../../emulation/detonations/T1686.003-2_2026-08-06.yml)), captured in the same fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
+- Primary: `T1686-1 Disable Microsoft Defender Firewall` (netsh) detonation [`emulation\detonations\T1686.003-1_2026-08-06.yml`](../../../../emulation/detonations/T1686.003-1_2026-08-06.yml), captured as the CI fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
+- Secondary: `T1686-2 Disable Microsoft Defender Firewall via Registry` (reg add) detonation [`emulation\detonations\T1686.003-2_2026-08-06.yml`]((../../../../emulation/detonations/T1686.003-2_2026-08-06.yml)), captured in the same fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
 
 The detection alerted on both, and the registry write was attributed to a different process in each (`svchost.exe` for netsh, `reg.exe` for the direct registry write), confirming the rule keys on the state change rather than the method.
 

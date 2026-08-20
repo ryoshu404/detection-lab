@@ -1,0 +1,22 @@
+technique: T1686-1
+attack_id: T1686.003
+name: Disable Microsoft Defender Firewall (netsh)
+tool: atomic
+platform: windows
+host: win-endpoint
+principal: Administrator
+start: 2026-08-15T21:54:53Z
+end: 2026-08-15T21:54:58Z
+telemetry:
+  - logs-windows.sysmon_operational
+artifacts:
+  - none
+notes: >
+  Promotion-validation detonation. Re-run of T1686-1 against the deployed rule
+  after promoting it to alerting:true, to confirm the promoted rule fires live
+  and drives the case branch. The alert carried alerting:true and routed through
+  the poller to the Tines Is Promoted branch, producing a case notification
+  (alert UUID d081811f3129968d6e9db6edbdfa6a680e0d0077). Distinct in purpose from
+  the 2026-08-06 fixture-capture detonations, which back the CI fixture; this one
+  validates the promotion lifecycle end to end. Cleaned up with -Cleanup; firewall
+  re-enabled and verified.

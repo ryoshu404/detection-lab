@@ -1,7 +1,7 @@
 # Disabled System Firewall
 
 - Rule: rule.yml
-- Status: Testing since 2026-08-06
+- Status: Live since 2026-08-15
 - Author: ryoshu404
 - Date: 2026-08-06
 
@@ -56,6 +56,8 @@ This detection was validated using Atomic Red Team.
 - Secondary: `T1686-2 Disable Microsoft Defender Firewall via Registry` (reg add) detonation [`emulation\detonations\T1686.003-2_2026-08-06.yaml`]((../../../../emulation/detonations/T1686.003-2_2026-08-06.yml)), captured in the same fixture [`tests\fixtures\T1686.003_2026-08-06`](../../../../tests/fixtures/T1686.003_2026-08-06).
 
 The detection alerted on both, and the registry write was attributed to a different process in each (`svchost.exe` for netsh, `reg.exe` for the direct registry write), confirming the rule keys on the state change rather than the method.
+
+The rule was promoted to `alerting: true` on 2026-08-15 and confirmed firing live against a fresh detonation [`emulation/detonations/T1686.003-1_2026-08-15.yml`](../../../../emulation/detonations/T1686.003-1_2026-08-15.yml), routing through the poller to the Tines promoted branch and producing a case notification rather than a burn-in log.
 
 ## Initial query (ES|QL)
 
